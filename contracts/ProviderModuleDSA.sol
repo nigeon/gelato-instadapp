@@ -59,22 +59,24 @@ contract ProviderModuleDSA is GelatoProviderModuleStandard {
         if (!AccountInterface(_userProxy).isAuth(gelatoCore))
             return "ProviderModuleDSA.isProvided:GelatoCoreNotAuth";
 
-        // Is connector valid
-        ConnectorsInterface connectors = ConnectorsInterface(index.connectors(
-            AccountInterface(_userProxy).version()
-        ));
+        // @dev commented out for gas savings
 
-        address[] memory targets = new address[](_task.actions.length);
-        for (uint i = 0; i < _task.actions.length; i++)
-            targets[i] = _task.actions[i].addr;
+        // // Is connector valid
+        // ConnectorsInterface connectors = ConnectorsInterface(index.connectors(
+        //     AccountInterface(_userProxy).version()
+        // ));
 
-        bool isShield = AccountInterface(_userProxy).shield();
-        if (isShield)
-            if (!connectors.isStaticConnector(targets))
-                return "ProviderModuleDSA.isProvided:not-static-connector";
-        else
-            if (!connectors.isConnector(targets))
-                return "ProviderModuleDSA.isProvided:not-connector";
+        // address[] memory targets = new address[](_task.actions.length);
+        // for (uint i = 0; i < _task.actions.length; i++)
+        //     targets[i] = _task.actions[i].addr;
+
+        // bool isShield = AccountInterface(_userProxy).shield();
+        // if (isShield)
+        //     if (!connectors.isStaticConnector(targets))
+        //         return "ProviderModuleDSA.isProvided:not-static-connector";
+        // else
+        //     if (!connectors.isConnector(targets))
+        //         return "ProviderModuleDSA.isProvided:not-connector";
 
         return OK;
     }
@@ -98,7 +100,7 @@ contract ProviderModuleDSA is GelatoProviderModuleStandard {
             AccountInterface.cast.selector,
             targets,
             datas,
-            tx.origin
+            gelatoCore
         );
     }
 }
