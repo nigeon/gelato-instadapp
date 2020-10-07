@@ -1,3 +1,6 @@
+// Buidler
+const { task, usePlugin, types } = require("@nomiclabs/buidler/config");
+
 // Libraries
 const assert = require("assert");
 const { utils } = require("ethers");
@@ -114,13 +117,13 @@ task(
 )
   .addOptionalParam("gelatocoreaddress")
   .addFlag("log", "Logs return values to stdout")
-  .setAction(async (taskArgs) => {
+  .setAction(async (taskArgs, bre) => {
     try {
-      const gelatoCore = await ethers.getContractAt(
+      const gelatoCore = await bre.ethers.getContractAt(
         GelatoCoreLib.GelatoCore.abi,
         taskArgs.gelatocoreaddress
           ? taskArgs.gelatocoreaddress
-          : network.config.GelatoCore
+          : bre.network.config.GelatoCore
       );
 
       const oracleAbi = ["function latestAnswer() view returns (int256)"];
@@ -128,7 +131,7 @@ task(
       const gelatoGasPriceOracleAddress = await gelatoCore.gelatoGasPriceOracle();
 
       // Get gelatoGasPriceOracleAddress
-      const gelatoGasPriceOracle = await ethers.getContractAt(
+      const gelatoGasPriceOracle = await bre.ethers.getContractAt(
         oracleAbi,
         gelatoGasPriceOracleAddress
       );

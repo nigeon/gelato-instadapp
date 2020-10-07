@@ -4,7 +4,7 @@ const { expect } = require("chai");
 const bre = require("@nomiclabs/buidler");
 const { ethers } = bre;
 const GelatoCoreLib = require("@gelatonetwork/core");
-const { sleep } = GelatoCoreLib;
+//const { sleep } = GelatoCoreLib;
 
 // Constants
 const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";

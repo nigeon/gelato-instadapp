@@ -1,0 +1,9 @@
+# Ignore artifacts:
+#artifacts
+cache
+assets
+coverage
+
+# Solidity
+contracts
+#pre-compiles

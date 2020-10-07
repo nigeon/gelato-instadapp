@@ -8,6 +8,9 @@ node_modules
 artifacts/
 cache/
 
+# ESLint
+.eslintcache
+
 # macOS
 .DS_Store
 *.icloud

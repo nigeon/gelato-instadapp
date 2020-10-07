@@ -21,6 +21,12 @@ jobs: # a collection of steps
       - run: # Compile
           name: Compile
           command: npx buidler compile
+      - run: # Formatting
+          name: Prettier Check
+          command: yarn prettier --check .
+      - run: # Linting
+          name: ESLint
+          command: yarn eslint .
       - run: # Tests
           name: Tests using buidler-ganache mainnet fork
           command: npx buidler test
