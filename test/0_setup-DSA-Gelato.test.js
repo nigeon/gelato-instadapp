@@ -1,8 +1,8 @@
 // running `npx buidler test` automatically makes use of buidler-waffle plugin
 // => only dependency we need is "chai"
-const { expect } = require("chai");
+const {expect} = require("chai");
 const bre = require("@nomiclabs/buidler");
-const { ethers } = bre;
+const {ethers} = bre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 //const { sleep } = GelatoCoreLib;
 
@@ -194,7 +194,7 @@ describe("DSA setup with Gelato Tests", function () {
     );
 
     // We withdraw to otherWallet to ignore gasUsed during test
-    const { 1: otherWallet } = await ethers.getSigners();
+    const {1: otherWallet} = await ethers.getSigners();
 
     // Instantiate Gelato ConnectBasic.withdraw Task
     const withdrawFromDSATask = new GelatoCoreLib.Task({

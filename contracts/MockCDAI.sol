@@ -10,7 +10,10 @@ contract MockCDAI {
     //uint256 public supplyRatePerSecond = 1000000000627937192491029810;  // per second==2% annually
 
     uint256 public supplyRatePerSecond;
-    constructor(uint256 _sRPS) public {  supplyRatePerSecond = _sRPS; }
+
+    constructor(uint256 _sRPS) public {
+        supplyRatePerSecond = _sRPS;
+    }
 
     /// @dev Use this during tests to simulate changing CDAI.supplyRatePerBlock conditions
     /// @param _rate CDAI.supplyRatePerBlock but in seconds and 10**27 precision

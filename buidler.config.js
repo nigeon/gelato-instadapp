@@ -1,9 +1,9 @@
 // Buidler
-const { task, usePlugin, types } = require("@nomiclabs/buidler/config");
+const {task, usePlugin, types} = require("@nomiclabs/buidler/config");
 
 // Libraries
 const assert = require("assert");
-const { utils } = require("ethers");
+const {utils} = require("ethers");
 
 const GelatoCoreLib = require("@gelatonetwork/core");
 
@@ -39,7 +39,7 @@ module.exports = {
   },
   solc: {
     version: "0.6.12",
-    optimizer: { enabled: true },
+    optimizer: {enabled: true},
   },
 };
 

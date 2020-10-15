@@ -1,8 +1,8 @@
 // running `npx buidler test` automatically makes use of buidler-waffle plugin
 // => only dependency we need is "chai"
-const { expect } = require("chai");
+const {expect} = require("chai");
 const bre = require("@nomiclabs/buidler");
-const { ethers } = bre;
+const {ethers} = bre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 //const { sleep } = GelatoCoreLib;
 

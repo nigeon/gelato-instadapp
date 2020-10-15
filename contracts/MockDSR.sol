@@ -12,7 +12,10 @@ contract MockDSR {
     /// uint256 public dsr = 1000000000627937192491029810;  // per second==2% annually
 
     uint256 public dsr;
-    constructor(uint256 _dsr) public { dsr = _dsr; }
+
+    constructor(uint256 _dsr) public {
+        dsr = _dsr;
+    }
 
     /// @dev Use this during tests to simulate changing DSR conditions
     /// @param _dsr The dsr to set.

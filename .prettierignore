@@ -3,7 +3,3 @@
 cache
 assets
 coverage
-
-# Solidity
-contracts
-#pre-compiles

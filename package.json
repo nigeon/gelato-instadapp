@@ -27,17 +27,18 @@
     "ethers": "5.0.17",
     "husky": ">=4",
     "lint-staged": ">=10",
-    "prettier": "2.1.2"
+    "prettier": "2.1.2",
+    "prettier-plugin-solidity": "1.0.0-alpha.59"
   },
   "dependencies": {},
   "husky": {
     "hooks": {
       "pre-commit": "yarn compile; lint-staged;",
-      "pre-push": "git fetch origin && HUSKY_SKIP_HOOKS=1 git rebase origin/master && yarn compile && lint-staged; yarn test"
+      "pre-push": "git fetch origin && HUSKY_SKIP_HOOKS=1 git rebase origin/master && yarn compile && yarn format && yarn test"
     }
   },
   "lint-staged": {
     "*.js": "eslint --cache --fix",
-    "*.{js,css,md}": "prettier --write"
+    "*.{js,sol,css,md}": "prettier --write"
   }
 }

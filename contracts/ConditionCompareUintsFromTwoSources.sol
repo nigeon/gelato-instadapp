@@ -22,37 +22,40 @@ contract ConditionCompareUintsFromTwoSources is GelatoConditionsStandard {
     function getConditionData(
         address _sourceA,
         address _sourceB,
-        bytes calldata  _sourceAData,
+        bytes calldata _sourceAData,
         bytes calldata _sourceBData,
         uint256 _minSpread
-    )
-        public
-        pure
-        virtual
-        returns (bytes memory)
-    {
-        return abi.encode(_sourceA, _sourceB, _sourceAData, _sourceBData, _minSpread);
+    ) public pure virtual returns (bytes memory) {
+        return
+            abi.encode(
+                _sourceA,
+                _sourceB,
+                _sourceAData,
+                _sourceBData,
+                _minSpread
+            );
     }
 
     /// @notice Gelato Standard Condition function.
     /// @dev Every Gelato Condition must have this function selector as entry point.
     /// @param _conditionData The encoded data from getConditionData()
-     function ok(uint256, bytes calldata _conditionData, uint256)
-        public
-        view
-        virtual
-        override
-        returns (string memory)
-    {
-        (address _sourceA,
-         address _sourceB,
-         bytes memory _sourceAData,
-         bytes memory _sourceBData,
-         uint256 _minSpread) = abi.decode(
+    function ok(
+        uint256,
+        bytes calldata _conditionData,
+        uint256
+    ) public view virtual override returns (string memory) {
+        (
+            address _sourceA,
+            address _sourceB,
+            bytes memory _sourceAData,
+            bytes memory _sourceBData,
+            uint256 _minSpread
+        ) = abi.decode(
             _conditionData,
-            (address,address,bytes,bytes,uint256)
+            (address, address, bytes, bytes, uint256)
         );
-        return compare(_sourceA, _sourceB, _sourceAData, _sourceBData, _minSpread);
+        return
+            compare(_sourceA, _sourceB, _sourceAData, _sourceBData, _minSpread);
     }
 
     /// @notice Compares 2 values from sourceA and sourceB to check if minSpread is there.
@@ -69,30 +72,29 @@ contract ConditionCompareUintsFromTwoSources is GelatoConditionsStandard {
     function compare(
         address _sourceA,
         address _sourceB,
-        bytes memory  _sourceAData,
+        bytes memory _sourceAData,
         bytes memory _sourceBData,
         uint256 _minSpread
-    )
-        public
-        view
-        virtual
-        returns (string memory)
-    {
+    ) public view virtual returns (string memory) {
         // Retrieve uint256 from sourceA
-        (bool success, bytes memory returndata) = _sourceA.staticcall(_sourceAData);
+        (bool success, bytes memory returndata) = _sourceA.staticcall(
+            _sourceAData
+        );
         if (!success) {
-            return returndata.generateErrorString(
-                "ConditionCompareTwoUints.compare._sourceA:"
-            );
+            return
+                returndata.generateErrorString(
+                    "ConditionCompareTwoUints.compare._sourceA:"
+                );
         }
         uint256 a = abi.decode(returndata, (uint256));
 
         // Retrieve uint256 from sourceB
         (success, returndata) = _sourceB.staticcall(_sourceBData);
         if (!success) {
-            return returndata.generateErrorString(
-                "ConditionCompareTwoUints.compare._sourceB:"
-            );
+            return
+                returndata.generateErrorString(
+                    "ConditionCompareTwoUints.compare._sourceB:"
+                );
         }
         uint256 b = abi.decode(returndata, (uint256));
 
