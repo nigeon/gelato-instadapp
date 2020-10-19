@@ -1,8 +1,8 @@
-// running `npx buidler test` automatically makes use of buidler-waffle plugin
+// running `npx hardhat test` automatically makes use of hardhat-waffle plugin
 // => only dependency we need is "chai"
 const {expect} = require("chai");
-const bre = require("@nomiclabs/buidler");
-const {ethers} = bre;
+const hre = require("hardhat");
+const {ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 //const { sleep } = GelatoCoreLib;
 
@@ -20,8 +20,8 @@ const ProviderModuleDSA_ABI = require("../pre-compiles/ProviderModuleDSA_ABI.jso
 
 describe("DSA setup with Gelato Tests", function () {
   this.timeout(50000);
-  if (bre.network.name !== "ganache") {
-    console.error("Test Suite is meant to be run on ganache only");
+  if (hre.network.name !== "hardhat") {
+    console.error("Test Suite is meant to be run on hardhat only");
     process.exit(1);
   }
 
@@ -53,19 +53,19 @@ describe("DSA setup with Gelato Tests", function () {
     // ===== DSA LOCAL SETUP ==================
     instaIndex = await ethers.getContractAt(
       InstaIndex.abi,
-      bre.network.config.InstaIndex
+      hre.network.config.InstaIndex
     );
     instaList = await ethers.getContractAt(
       InstaList.abi,
-      bre.network.config.InstaList
+      hre.network.config.InstaList
     );
     instaConnectors = await ethers.getContractAt(
       InstaConnectors.abi,
-      bre.network.config.InstaConnectors
+      hre.network.config.InstaConnectors
     );
     instaAccount = await ethers.getContractAt(
       InstaAccount.abi,
-      bre.network.config.InstaAccount
+      hre.network.config.InstaAccount
     );
 
     dsaVersion = await instaAccount.version();
@@ -86,11 +86,11 @@ describe("DSA setup with Gelato Tests", function () {
     // ===== GELATO LOCAL SETUP ==================
     gelatoCore = await ethers.getContractAt(
       GelatoCoreLib.GelatoCore.abi,
-      bre.network.config.GelatoCore
+      hre.network.config.GelatoCore
     );
     providerModuleDSA = await ethers.getContractAt(
       ProviderModuleDSA_ABI,
-      bre.network.config.ProviderModuleDSA
+      hre.network.config.ProviderModuleDSA
     );
   });
 
@@ -100,13 +100,13 @@ describe("DSA setup with Gelato Tests", function () {
     expect(await instaIndex.connectors(dsaVersion)).to.be.equal(
       instaConnectors.address
     );
-    expect(await instaConnectors.connectors(bre.network.config.ConnectAuth)).to
+    expect(await instaConnectors.connectors(hre.network.config.ConnectAuth)).to
       .be.true;
-    expect(await instaConnectors.connectors(bre.network.config.ConnectBasic)).to
+    expect(await instaConnectors.connectors(hre.network.config.ConnectBasic)).to
       .be.true;
-    expect(await instaConnectors.connectors(bre.network.config.ConnectMaker)).to
+    expect(await instaConnectors.connectors(hre.network.config.ConnectMaker)).to
       .be.true;
-    expect(await instaConnectors.connectors(bre.network.config.ConnectCompound))
+    expect(await instaConnectors.connectors(hre.network.config.ConnectCompound))
       .to.be.true;
   });
 
@@ -137,14 +137,14 @@ describe("DSA setup with Gelato Tests", function () {
     );
 
     // Encode Payloads for ConnectBasic.withdraw
-    const withdrawData = await bre.run("abi-encode-withselector", {
+    const withdrawData = await hre.run("abi-encode-withselector", {
       abi: ConnectBasic.abi,
       functionname: "withdraw",
       inputs: [ETH, ethers.utils.parseEther("1"), userAddress, 0, 0],
     });
 
     await expect(
-      dsa.cast([bre.network.config.ConnectBasic], [withdrawData], userAddress, {
+      dsa.cast([hre.network.config.ConnectBasic], [withdrawData], userAddress, {
         gasLimit,
         gasPrice,
       })
@@ -162,14 +162,14 @@ describe("DSA setup with Gelato Tests", function () {
     expect(await dsa.isAuth(gelatoCore.address)).to.be.false;
 
     // Encode Payloads for ConnectAuth.addModule
-    const addAuthData = await bre.run("abi-encode-withselector", {
+    const addAuthData = await hre.run("abi-encode-withselector", {
       abi: ConnectAuth.abi,
       functionname: "add",
       inputs: [gelatoCore.address],
     });
 
     await expect(
-      dsa.cast([bre.network.config.ConnectAuth], [addAuthData], userAddress)
+      dsa.cast([hre.network.config.ConnectAuth], [addAuthData], userAddress)
     )
       .to.emit(dsa, "LogCast")
       .withArgs(userAddress, userAddress, 0);
@@ -179,7 +179,7 @@ describe("DSA setup with Gelato Tests", function () {
 
   it("#5: ConnectGelato is deployed and whitelisted on mainnet", async function () {
     expect(
-      await instaConnectors.isConnector([bre.network.config.ConnectGelato])
+      await instaConnectors.isConnector([hre.network.config.ConnectGelato])
     ).to.be.true;
   });
 
@@ -200,8 +200,8 @@ describe("DSA setup with Gelato Tests", function () {
     const withdrawFromDSATask = new GelatoCoreLib.Task({
       actions: [
         new GelatoCoreLib.Action({
-          addr: bre.network.config.ConnectBasic,
-          data: await bre.run("abi-encode-withselector", {
+          addr: hre.network.config.ConnectBasic,
+          data: await hre.run("abi-encode-withselector", {
             abi: ConnectBasic.abi,
             functionname: "withdraw",
             inputs: [
@@ -218,13 +218,13 @@ describe("DSA setup with Gelato Tests", function () {
     });
 
     // otherWallet needs to be an authority to qualify as withdraw to address.
-    const addAuthData = await bre.run("abi-encode-withselector", {
+    const addAuthData = await hre.run("abi-encode-withselector", {
       abi: ConnectAuth.abi,
       functionname: "add",
       inputs: [await otherWallet.getAddress()],
     });
     await dsa.cast(
-      [bre.network.config.ConnectAuth],
+      [hre.network.config.ConnectAuth],
       [addAuthData],
       userAddress
     );

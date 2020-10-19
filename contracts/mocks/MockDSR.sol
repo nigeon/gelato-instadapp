@@ -1,5 +1,5 @@
 // "SPDX-License-Identifier: UNLICENSED"
-pragma solidity 0.6.12;
+pragma solidity 0.7.4;
 
 contract MockDSR {
     // DSR
@@ -13,7 +13,7 @@ contract MockDSR {
 
     uint256 public dsr;
 
-    constructor(uint256 _dsr) public {
+    constructor(uint256 _dsr) {
         dsr = _dsr;
     }
 

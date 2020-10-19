@@ -1,6 +1,6 @@
 const {expect} = require("chai");
-const bre = require("@nomiclabs/buidler");
-const {ethers} = bre;
+const hre = require("hardhat");
+const {ethers} = hre;
 
 // #region Contracts ABI
 
@@ -12,12 +12,16 @@ const InstaAccount = require("../pre-compiles/InstaAccount.json");
 const InstaIndex = require("../pre-compiles/InstaIndex.json");
 const IERC20 = require("../pre-compiles/IERC20.json");
 
+const ORACLE_MAKER_ETH_USD = "ETH/USD-Maker-v1";
+const ORACLE_MAKER_ETH_USD_ADDR = "0x729D19f657BD0614b4985Cf1D82531c67569197B";
+const PRICE_ORACLE_MAKER_PAYLOAD = "0x57de26a4"; // IMakerOracle.read()
+
 // #endregion
 
-describe("ConditionMakerVaultIsSafe gelato condition contract unit test", function () {
+describe("ConditionMakerVaultUnsafe Unit Test", function () {
   this.timeout(0);
-  if (bre.network.name !== "ganache") {
-    console.error("Test Suite is meant to be run on ganache only");
+  if (hre.network.name !== "hardhat") {
+    console.error("Test Suite is meant to be run on hardhat only");
     process.exit(1);
   }
 
@@ -30,8 +34,8 @@ describe("ConditionMakerVaultIsSafe gelato condition contract unit test", functi
   let instaIndex;
   let daiToken;
 
-  let conditionMakerVaultIsSafe;
-  let oracleAggregator;
+  let conditionMakerVaultUnsafe;
+  let priceOracleResolver;
 
   let cdpId;
   let dsa;
@@ -41,46 +45,44 @@ describe("ConditionMakerVaultIsSafe gelato condition contract unit test", functi
     [userWallet] = await ethers.getSigners();
     userAddress = await userWallet.getAddress();
 
-    // Ganache default accounts prefilled with 100 ETH
+    // Hardhat default accounts prefilled with 100 ETH
     expect(await userWallet.getBalance()).to.be.gt(
       ethers.utils.parseEther("10")
     );
 
     instaIndex = await ethers.getContractAt(
       InstaIndex.abi,
-      bre.network.config.InstaIndex
+      hre.network.config.InstaIndex
     );
     instaList = await ethers.getContractAt(
       InstaList.abi,
-      bre.network.config.InstaList
+      hre.network.config.InstaList
     );
     getCdps = await ethers.getContractAt(
       GetCdps.abi,
-      bre.network.config.GetCdps
+      hre.network.config.GetCdps
     );
     dssCdpManager = await ethers.getContractAt(
       DssCdpManager.abi,
-      bre.network.config.DssCdpManager
+      hre.network.config.DssCdpManager
     );
-    daiToken = await ethers.getContractAt(IERC20.abi, bre.network.config.DAI);
+    daiToken = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
 
     // ========== Test Setup ============
 
-    const OracleAggregator = await ethers.getContractFactory(
-      "OracleAggregator"
+    const PriceOracleResolver = await ethers.getContractFactory(
+      "PriceOracleResolver"
     );
 
-    oracleAggregator = await OracleAggregator.deploy();
-    await oracleAggregator.deployed();
+    priceOracleResolver = await PriceOracleResolver.deploy();
+    await priceOracleResolver.deployed();
 
-    const ConditionMakerVaultIsSafe = await ethers.getContractFactory(
-      "ConditionMakerVaultIsSafe"
+    const ConditionMakerVaultUnsafe = await ethers.getContractFactory(
+      "ConditionMakerVaultUnsafe"
     );
 
-    conditionMakerVaultIsSafe = await ConditionMakerVaultIsSafe.deploy(
-      oracleAggregator.address
-    );
-    await conditionMakerVaultIsSafe.deployed();
+    conditionMakerVaultUnsafe = await ConditionMakerVaultUnsafe.deploy();
+    await conditionMakerVaultUnsafe.deployed();
 
     // Create DeFi Smart Account
 
@@ -100,13 +102,13 @@ describe("ConditionMakerVaultIsSafe gelato condition contract unit test", functi
     );
 
     // Create/Deposit/Borrow a Vault
-    const openVault = await bre.run("abi-encode-withselector", {
+    const openVault = await hre.run("abi-encode-withselector", {
       abi: ConnectMaker.abi,
       functionname: "open",
       inputs: ["ETH-A"],
     });
 
-    await dsa.cast([bre.network.config.ConnectMaker], [openVault], userAddress);
+    await dsa.cast([hre.network.config.ConnectMaker], [openVault], userAddress);
 
     let cdps = await getCdps.getCdpsAsc(dssCdpManager.address, dsa.address);
     cdpId = String(cdps.ids[0]);
@@ -114,9 +116,9 @@ describe("ConditionMakerVaultIsSafe gelato condition contract unit test", functi
     expect(cdps.ids[0].isZero()).to.be.false;
 
     await dsa.cast(
-      [bre.network.config.ConnectMaker],
+      [hre.network.config.ConnectMaker],
       [
-        await bre.run("abi-encode-withselector", {
+        await hre.run("abi-encode-withselector", {
           abi: ConnectMaker.abi,
           functionname: "deposit",
           inputs: [cdpId, ethers.utils.parseEther("10"), 0, 0],
@@ -128,9 +130,9 @@ describe("ConditionMakerVaultIsSafe gelato condition contract unit test", functi
       }
     );
     await dsa.cast(
-      [bre.network.config.ConnectMaker],
+      [hre.network.config.ConnectMaker],
       [
-        await bre.run("abi-encode-withselector", {
+        await hre.run("abi-encode-withselector", {
           abi: ConnectMaker.abi,
           functionname: "borrow",
           inputs: [cdpId, ethers.utils.parseUnits("1000", 18), 0, 0],
@@ -142,41 +144,48 @@ describe("ConditionMakerVaultIsSafe gelato condition contract unit test", functi
     expect(await daiToken.balanceOf(dsa.address)).to.be.equal(
       ethers.utils.parseEther("1000")
     );
-    // Add ETH/USD Maker Medianizer in the Oracle Aggregator
+    // Add ETH/USD Maker Medianizer in the PriceOracleResolver
 
-    await oracleAggregator.addOracle(
-      "ETH/USD",
-      "0x729D19f657BD0614b4985Cf1D82531c67569197B"
+    await priceOracleResolver.addOracle(
+      ORACLE_MAKER_ETH_USD,
+      ORACLE_MAKER_ETH_USD_ADDR,
+      PRICE_ORACLE_MAKER_PAYLOAD
     );
   });
 
-  it("#1: ok should return NotOKMakerVaultIsSafe when the ETH/USD price is above the defined limit", async function () {
-    let data = await conditionMakerVaultIsSafe.getConditionData(
+  it("#1: ok should return MakerVaultNotUnsafe when the ETH/USD price is above the defined limit", async function () {
+    const conditionData = await conditionMakerVaultUnsafe.getConditionData(
       cdpId,
-      "ETH/USD",
+      ORACLE_MAKER_ETH_USD_ADDR,
+      PRICE_ORACLE_MAKER_PAYLOAD,
       ethers.utils.parseUnits("30", 17)
     );
 
-    expect(await conditionMakerVaultIsSafe.ok(0, data, 0)).to.be.equal(
-      "NotOKMakerVaultIsSafe"
+    expect(await conditionMakerVaultUnsafe.ok(0, conditionData, 0)).to.be.equal(
+      "MakerVaultNotUnsafe"
     );
   });
 
   it("#2: ok should return OK when the ETH/USD price is lower than the defined limit", async function () {
-    let data = await conditionMakerVaultIsSafe.getConditionData(
+    const conditionData = await conditionMakerVaultUnsafe.getConditionData(
       cdpId,
-      "ETH/USD",
+      priceOracleResolver.address,
+      await hre.run("abi-encode-withselector", {
+        abi: (await hre.artifacts.readArtifact("PriceOracleResolver")).abi,
+        functionname: "getMockPrice",
+        inputs: [userAddress],
+      }),
       ethers.utils.parseUnits("30", 17)
     );
 
     //#region Mock Part
 
-    oracleAggregator.mock(true, ethers.utils.parseUnits("299", 18));
+    priceOracleResolver.setMockPrice(ethers.utils.parseUnits("299", 18));
 
     //#endregion
 
-    expect(await conditionMakerVaultIsSafe.ok(0, data, 0)).to.be.equal(
-      "NotOKMakerVaultIsSafe"
+    expect(await conditionMakerVaultUnsafe.ok(0, conditionData, 0)).to.be.equal(
+      "OK"
     );
   });
 });

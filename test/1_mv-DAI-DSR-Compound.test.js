@@ -1,8 +1,8 @@
-// running `npx buidler test` automatically makes use of buidler-waffle plugin
+// running `npx hardhat test` automatically makes use of hardhat-waffle plugin
 // => only dependency we need is "chai"
 const {expect} = require("chai");
-const bre = require("@nomiclabs/buidler");
-const {ethers} = bre;
+const hre = require("hardhat");
+const {ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 //const { sleep } = GelatoCoreLib;
 
@@ -25,8 +25,8 @@ const IUniswapExchange = require("../pre-compiles/IUniswapExchange.json");
 
 describe("Move DAI lending from DSR to Compound", function () {
   this.timeout(0);
-  if (bre.network.name !== "ganache") {
-    console.error("Test Suite is meant to be run on ganache only");
+  if (hre.network.name !== "hardhat") {
+    console.error("Test Suite is meant to be run on hardhat only");
     process.exit(1);
   }
 
@@ -52,7 +52,7 @@ describe("Move DAI lending from DSR to Compound", function () {
     [userWallet] = await ethers.getSigners();
     userAddress = await userWallet.getAddress();
 
-    // Ganache default accounts prefilled with 100 ETH
+    // Hardhat default accounts prefilled with 100 ETH
     expect(await userWallet.getBalance()).to.be.gt(
       ethers.utils.parseEther("10")
     );
@@ -60,19 +60,19 @@ describe("Move DAI lending from DSR to Compound", function () {
     // ===== DSA SETUP ==================
     const instaIndex = await ethers.getContractAt(
       InstaIndex.abi,
-      bre.network.config.InstaIndex
+      hre.network.config.InstaIndex
     );
     const instaList = await ethers.getContractAt(
       InstaList.abi,
-      bre.network.config.InstaList
+      hre.network.config.InstaList
     );
     connectMaker = await ethers.getContractAt(
       ConnectMaker.abi,
-      bre.network.config.ConnectMaker
+      hre.network.config.ConnectMaker
     );
     connectCompound = await ethers.getContractAt(
       ConnectCompound.abi,
-      bre.network.config.ConnectCompound
+      hre.network.config.ConnectCompound
     );
 
     // Deploy DSA and get and verify ID of newly deployed DSA
@@ -91,17 +91,17 @@ describe("Move DAI lending from DSR to Compound", function () {
     // ===== GELATO SETUP ==================
     gelatoCore = await ethers.getContractAt(
       GelatoCoreLib.GelatoCore.abi,
-      bre.network.config.GelatoCore
+      hre.network.config.GelatoCore
     );
 
     // Add GelatoCore as auth on DSA
-    const addAuthData = await bre.run("abi-encode-withselector", {
+    const addAuthData = await hre.run("abi-encode-withselector", {
       abi: ConnectAuth.abi,
       functionname: "add",
       inputs: [gelatoCore.address],
     });
     await dsa.cast(
-      [bre.network.config.ConnectAuth],
+      [hre.network.config.ConnectAuth],
       [addAuthData],
       userAddress
     );
@@ -125,13 +125,13 @@ describe("Move DAI lending from DSR to Compound", function () {
 
     // ===== Dapp Dependencies SETUP ==================
     // This test assumes our user has 100 DAI deposited in Maker DSR
-    dai = await ethers.getContractAt(IERC20.abi, bre.network.config.DAI);
+    dai = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
     expect(await dai.balanceOf(userAddress)).to.be.equal(0);
 
     // Let's get the test user 100 DAI++ from Kyber
     const daiUniswapExchange = await ethers.getContractAt(
       IUniswapExchange.abi,
-      bre.network.config.DAI_UNISWAP
+      hre.network.config.DAI_UNISWAP
     );
     await daiUniswapExchange.ethToTokenTransferInput(
       1,
@@ -148,14 +148,14 @@ describe("Move DAI lending from DSR to Compound", function () {
     expect(await dai.balanceOf(dsa.address)).to.be.eq(DAI_100);
 
     // Next we deposit the 100 DAI into the DSR
-    const depositDai = await bre.run("abi-encode-withselector", {
+    const depositDai = await hre.run("abi-encode-withselector", {
       abi: ConnectMaker.abi,
       functionname: "depositDai",
       inputs: [DAI_100, 0, 0],
     });
 
     await expect(
-      dsa.cast([bre.network.config.ConnectMaker], [depositDai], userAddress)
+      dsa.cast([hre.network.config.ConnectMaker], [depositDai], userAddress)
     )
       .to.emit(dsa, "LogCast")
       .withArgs(userAddress, userAddress, 0);
@@ -172,12 +172,12 @@ describe("Move DAI lending from DSR to Compound", function () {
       data: await conditionCompareUints.getConditionData(
         mockCDAI.address, // We are in DSR so we compare against CDAI => SourceA=CDAI
         mockDSR.address, // SourceB=DSR
-        await bre.run("abi-encode-withselector", {
-          abi: require("../artifacts/MockCDAI.json").abi,
+        await hre.run("abi-encode-withselector", {
+          abi: (await hre.artifacts.readArtifact("MockCDAI")).abi,
           functionname: "supplyRatePerSecond",
         }), // CDAI data feed first (sourceAData)
-        await bre.run("abi-encode-withselector", {
-          abi: require("../artifacts/MockDSR.json").abi,
+        await hre.run("abi-encode-withselector", {
+          abi: (await hre.artifacts.readArtifact("MockDSR")).abi,
           functionname: "dsr",
         }), // DSR data feed second (sourceBData)
         MIN_SPREAD
@@ -192,7 +192,7 @@ describe("Move DAI lending from DSR to Compound", function () {
     // target2 Compound deposit to fetch DAI amount.
     const connectorWithdrawFromDSR = new GelatoCoreLib.Action({
       addr: connectMaker.address,
-      data: await bre.run("abi-encode-withselector", {
+      data: await hre.run("abi-encode-withselector", {
         abi: ConnectMaker.abi,
         functionname: "withdrawDai",
         inputs: [ethers.constants.MaxUint256, 0, 1],
@@ -204,7 +204,7 @@ describe("Move DAI lending from DSR to Compound", function () {
     // We instantiate target2: Deposit DAI to CDAI and getId 1
     const connectorDepositCompound = new GelatoCoreLib.Action({
       addr: connectCompound.address,
-      data: await bre.run("abi-encode-withselector", {
+      data: await hre.run("abi-encode-withselector", {
         abi: ConnectCompound.abi,
         functionname: "deposit",
         inputs: [dai.address, 0, 1, 0],
@@ -240,7 +240,7 @@ describe("Move DAI lending from DSR to Compound", function () {
     // protocol. Check out ./contracts/ProviderModuleDSA.sol to see what it does.
     const gelatoSelfProvider = new GelatoCoreLib.GelatoProvider({
       addr: dsa.address,
-      module: bre.network.config.ProviderModuleDSA,
+      module: hre.network.config.ProviderModuleDSA,
     });
 
     // ======= Executor Setup =========
@@ -263,15 +263,15 @@ describe("Move DAI lending from DSR to Compound", function () {
       GAS_PRICE_CEIL
     );
     await dsa.cast(
-      [bre.network.config.ConnectGelato], // targets
+      [hre.network.config.ConnectGelato], // targets
       [
-        await bre.run("abi-encode-withselector", {
+        await hre.run("abi-encode-withselector", {
           abi: ConnectGelato_ABI,
           functionname: "multiProvide",
           inputs: [
             userAddress,
             [],
-            [bre.network.config.ProviderModuleDSA],
+            [hre.network.config.ProviderModuleDSA],
             TASK_AUTOMATION_FUNDS,
             0, // _getId
             0, // _setId
@@ -296,7 +296,7 @@ describe("Move DAI lending from DSR to Compound", function () {
     expect(
       await gelatoCore.isModuleProvided(
         dsa.address,
-        bre.network.config.ProviderModuleDSA
+        hre.network.config.ProviderModuleDSA
       )
     ).to.be.true;
 
@@ -306,9 +306,9 @@ describe("Move DAI lending from DSR to Compound", function () {
     const expiryDate = 0;
     await expect(
       dsa.cast(
-        [bre.network.config.ConnectGelato], // targets
+        [hre.network.config.ConnectGelato], // targets
         [
-          await bre.run("abi-encode-withselector", {
+          await hre.run("abi-encode-withselector", {
             abi: ConnectGelato_ABI,
             functionname: "submitTask",
             inputs: [
@@ -345,7 +345,7 @@ describe("Move DAI lending from DSR to Compound", function () {
     // First we fetch the gelatoGasPrice as fed by ChainLink oracle. Gelato
     // allows Users to specify a maximum fast gwei gas price for their Tasks
     // to remain executable up until.
-    const gelatoGasPrice = await bre.run("fetchGelatoGasPrice");
+    const gelatoGasPrice = await hre.run("fetchGelatoGasPrice");
     expect(gelatoGasPrice).to.be.lte(
       taskRebalanceDSRToCDAIifBetter.selfProviderGasPriceCeil
     );
@@ -383,7 +383,7 @@ describe("Move DAI lending from DSR to Compound", function () {
     // we look at changes in the CDAI balance of the DSA
     const cDAI = await ethers.getContractAt(
       IERC20.abi,
-      bre.network.config.CDAI
+      hre.network.config.CDAI
     );
     const dsaCDAIBefore = await cDAI.balanceOf(dsa.address);
 

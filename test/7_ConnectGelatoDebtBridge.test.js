@@ -1,6 +1,6 @@
 const {expect} = require("chai");
-const bre = require("@nomiclabs/buidler");
-const {ethers} = bre;
+const hre = require("hardhat");
+const {ethers} = hre;
 
 const WAD = ethers.utils.parseUnits("1", 18);
 
@@ -16,30 +16,29 @@ let wmul = (x, y) => {
 
 //#endregion
 
-describe("Gelato Debt Bridge Connector unit test", function () {
+describe("Gelato Debt Bridge Connector Unit Test", function () {
   this.timeout(0);
-  if (bre.network.name !== "ganache") {
-    console.error("Test Suite is meant to be run on ganache only");
+  if (hre.network.name !== "hardhat") {
+    console.error("Test Suite is meant to be run on hardhat only");
     process.exit(1);
   }
 
-  let connectGelatoDebtBridge;
+  let connectGelatoDebtBridgeFromMaker;
   before(async function () {
-    const ConnectGelatoDebtBridge = await ethers.getContractFactory(
-      "ConnectGelatoDebtBridge"
+    const ConnectGelatoDebtBridgeFromMaker = await ethers.getContractFactory(
+      "ConnectGelatoDebtBridgeFromMaker"
     );
-    connectGelatoDebtBridge = await ConnectGelatoDebtBridge.deploy(
-      0,
-      ethers.constants.AddressZero
+    connectGelatoDebtBridgeFromMaker = await ConnectGelatoDebtBridgeFromMaker.deploy(
+      0
     );
-    connectGelatoDebtBridge.deployed();
+    connectGelatoDebtBridgeFromMaker.deployed();
   });
 
-  it("#1: _wcollateralToWithdraw should return the amount of collateral to withdraw on protocol 1 and to put on protocol 2", async function () {
+  it("#1: wCalcCollateralToWithdraw should return the amount of collateral to withdraw on protocol 1 and to put on protocol 2", async function () {
     // 3 times more collateral than borrowed amount in protocol 1
-    let wantedLiquidationRatioOnProtocol1 = ethers.utils.parseUnits("3", 18);
+    let minColRatioOnMaker = ethers.utils.parseUnits("3", 18);
     // 1.5 times more collateral than borrowed amount in protocol 2
-    let wantedLiquidationRatioOnProtocol2 = ethers.utils.parseUnits("15", 17);
+    let minColRatioOnPositionB = ethers.utils.parseUnits("15", 17);
     // The amount of collateral locked
     let col = ethers.utils.parseUnits("1", 18);
     // The amount of borrowed token
@@ -56,18 +55,15 @@ describe("Gelato Debt Bridge Connector unit test", function () {
     //#region CALCULATION REPLICATION
 
     let expectedColToWithdraw = wmul(
-      wmul(
-        wantedLiquidationRatioOnProtocol1,
-        wantedLiquidationRatioOnProtocol2
-      ),
+      wmul(minColRatioOnMaker, minColRatioOnPositionB),
       borrowedToken
     ); // doc ref : c_r x comp_r x d_2
     expectedColToWithdraw = expectedColToWithdraw.sub(
-      wmul(wantedLiquidationRatioOnProtocol1, collateral)
+      wmul(minColRatioOnMaker, collateral)
     ); // doc ref : c_r x comp_r x d_2 - c_r x e_2
     expectedColToWithdraw = wdiv(
       expectedColToWithdraw,
-      wantedLiquidationRatioOnProtocol2.sub(wantedLiquidationRatioOnProtocol1)
+      minColRatioOnPositionB.sub(minColRatioOnMaker)
     ); // doc ref : (c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r)
     expectedColToWithdraw = collateral.sub(expectedColToWithdraw); // doc ref : e_2 - ((c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r))
 
@@ -77,21 +73,21 @@ describe("Gelato Debt Bridge Connector unit test", function () {
     //#endregion
 
     expect(
-      await connectGelatoDebtBridge.wcollateralToWithdraw(
-        wantedLiquidationRatioOnProtocol1,
-        wantedLiquidationRatioOnProtocol2,
+      await connectGelatoDebtBridgeFromMaker.wCalcCollateralToWithdraw(
+        minColRatioOnMaker,
+        minColRatioOnPositionB,
+        collateralPrice,
         collateral,
-        borrowedToken,
-        collateralPrice
+        borrowedToken
       )
     ).to.be.equal(expectedColToWithdraw);
   });
 
-  it("#2: _wborrowedTokenToPayback should return the amount of borrowed token to pay back on protocol 1", async function () {
+  it("#2: _wCalcDebtToRepay should return the amount of borrowed token to pay back on protocol 1", async function () {
     // 3 times more collateral than borrowed amount in protocol 1
-    let wantedLiquidationRatioOnProtocol1 = ethers.utils.parseUnits("3", 18);
+    let minColRatioOnMaker = ethers.utils.parseUnits("3", 18);
     // 1.5 times more collateral than borrowed amount in protocol 2
-    let wantedLiquidationRatioOnProtocol2 = ethers.utils.parseUnits("15", 17);
+    let minColRatioOnPositionB = ethers.utils.parseUnits("15", 17);
     // The amount of collateral locked
     let col = ethers.utils.parseUnits("1", 18);
     // The amount of borrowed token
@@ -108,21 +104,18 @@ describe("Gelato Debt Bridge Connector unit test", function () {
     //#region CALCULATION REPLICATION
 
     let expectedBorToPayBack = wmul(
-      wmul(
-        wantedLiquidationRatioOnProtocol1,
-        wantedLiquidationRatioOnProtocol2
-      ),
+      wmul(minColRatioOnMaker, minColRatioOnPositionB),
       borrowedToken
     ); // doc ref : c_r x comp_r x d_2
     expectedBorToPayBack = expectedBorToPayBack.sub(
-      wmul(wantedLiquidationRatioOnProtocol1, collateral)
+      wmul(minColRatioOnMaker, collateral)
     ); // doc ref : c_r x comp_r x d_2 - c_r x e_2
     expectedBorToPayBack = wdiv(
       expectedBorToPayBack,
-      wantedLiquidationRatioOnProtocol2.sub(wantedLiquidationRatioOnProtocol1)
+      minColRatioOnPositionB.sub(minColRatioOnMaker)
     ); // doc ref : (c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r)
     expectedBorToPayBack = wmul(
-      wdiv(ethers.utils.parseUnits("1", 18), wantedLiquidationRatioOnProtocol1),
+      wdiv(ethers.utils.parseUnits("1", 18), minColRatioOnMaker),
       expectedBorToPayBack
     ); // doc ref : (1/c_r)((c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r))
     expectedBorToPayBack = borrowedToken.sub(expectedBorToPayBack); // doc ref : d_2 - (1/c_r)((c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r))
@@ -130,9 +123,9 @@ describe("Gelato Debt Bridge Connector unit test", function () {
     //#endregion
 
     expect(
-      await connectGelatoDebtBridge.wborrowedTokenToPayback(
-        wantedLiquidationRatioOnProtocol1,
-        wantedLiquidationRatioOnProtocol2,
+      await connectGelatoDebtBridgeFromMaker.wCalcDebtToRepay(
+        minColRatioOnMaker,
+        minColRatioOnPositionB,
         collateral,
         borrowedToken
       )

@@ -1,5 +1,5 @@
 // "SPDX-License-Identifier: UNLICENSED"
-pragma solidity 0.6.12;
+pragma solidity 0.7.4;
 
 contract MockCDAI {
     // DSR
@@ -11,7 +11,7 @@ contract MockCDAI {
 
     uint256 public supplyRatePerSecond;
 
-    constructor(uint256 _sRPS) public {
+    constructor(uint256 _sRPS) {
         supplyRatePerSecond = _sRPS;
     }
 

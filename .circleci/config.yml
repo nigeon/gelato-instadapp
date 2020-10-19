@@ -20,16 +20,16 @@ jobs: # a collection of steps
             - ./node_modules
       - run: # Compile
           name: Compile
-          command: npx buidler compile
+          command: npx hardhat compile
       - run: # Formatting
           name: Prettier Check
           command: yarn prettier --check .
       - run: # Linting
           name: ESLint
-          command: yarn eslint .
+          command: yarn eslint . && yarn lint:sol
       - run: # Tests
-          name: Tests using buidler-ganache mainnet fork
-          command: npx buidler test
+          name: Tests using hardhat mainnet fork
+          command: npx hardhat test
     #   - store_artifacts: # for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
     #       path: coverage
     #       prefix: coverage

@@ -1,6 +1,6 @@
 const {expect} = require("chai");
-const bre = require("@nomiclabs/buidler");
-const {ethers} = bre;
+const hre = require("hardhat");
+const {ethers} = hre;
 
 // #region Contracts ABI
 
@@ -13,14 +13,13 @@ const InstaAccount = require("../pre-compiles/InstaAccount.json");
 const InstaIndex = require("../pre-compiles/InstaIndex.json");
 const IERC20 = require("../pre-compiles/IERC20.json");
 const InstaConnector = require("../pre-compiles/InstaConnectors.json");
-const ConnectGelatoProviderPaymentABI = require("../artifacts/ConnectGelatoProviderPayment.json");
 
 // #endregion
 
-describe("Gelato Provider Payment Connector unit test", function () {
+describe("ConnectGelatoProviderPayment Unit Test", function () {
   this.timeout(0);
-  if (bre.network.name !== "ganache") {
-    console.error("Test Suite is meant to be run on ganache only");
+  if (hre.network.name !== "hardhat") {
+    console.error("Test Suite is meant to be run on hardhat only");
     process.exit(1);
   }
 
@@ -52,39 +51,39 @@ describe("Gelato Provider Payment Connector unit test", function () {
     providerAddress = await providerWallet.getAddress();
 
     instaMaster = await ethers.provider.getSigner(
-      bre.network.config.InstaMaster
+      hre.network.config.InstaMaster
     );
 
-    // Ganache default accounts prefilled with 100 ETH
+    // Hardhat default accounts prefilled with 100 ETH
     expect(await userWallet.getBalance()).to.be.gt(
       ethers.utils.parseEther("10")
     );
 
     instaIndex = await ethers.getContractAt(
       InstaIndex.abi,
-      bre.network.config.InstaIndex
+      hre.network.config.InstaIndex
     );
     instaList = await ethers.getContractAt(
       InstaList.abi,
-      bre.network.config.InstaList
+      hre.network.config.InstaList
     );
     connectBasic = await ethers.getContractAt(
       ConnectBasic.abi,
-      bre.network.config.ConnectBasic
+      hre.network.config.ConnectBasic
     );
     instaConnectors = await ethers.getContractAt(
       InstaConnector.abi,
-      bre.network.config.InstaConnectors
+      hre.network.config.InstaConnectors
     );
     getCdps = await ethers.getContractAt(
       GetCdps.abi,
-      bre.network.config.GetCdps
+      hre.network.config.GetCdps
     );
     dssCdpManager = await ethers.getContractAt(
       DssCdpManager.abi,
-      bre.network.config.DssCdpManager
+      hre.network.config.DssCdpManager
     );
-    daiToken = await ethers.getContractAt(IERC20.abi, bre.network.config.DAI);
+    daiToken = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
 
     // ========== Test Setup ============
 
@@ -99,13 +98,23 @@ describe("Gelato Provider Payment Connector unit test", function () {
     );
     connectGelatoProviderPayment.deployed();
 
+    await userWallet.sendTransaction({
+      to: hre.network.config.InstaMaster,
+      value: ethers.utils.parseEther("0.1"),
+    });
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [await instaMaster.getAddress()],
+    });
+
     await instaConnectors
       .connect(instaMaster)
       .enable(connectGelatoProviderPayment.address);
 
-    await userWallet.sendTransaction({
-      to: bre.network.config.InstaMaster,
-      value: ethers.utils.parseEther("0.1"),
+    await hre.network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [await instaMaster.getAddress()],
     });
 
     expect(
@@ -130,13 +139,13 @@ describe("Gelato Provider Payment Connector unit test", function () {
     );
   });
 
-  it("#1: payProvider should pay to Provider 300x10^18 token dai", async function () {
-    let providerDAIBalanceBefore = await daiToken.balanceOf(providerAddress);
+  it("#1: payProvider should pay to Provider 300 Dai", async function () {
+    const providerDAIBalanceBefore = await daiToken.balanceOf(providerAddress);
 
     await dsa.cast(
-      [bre.network.config.ConnectMaker],
+      [hre.network.config.ConnectMaker],
       [
-        await bre.run("abi-encode-withselector", {
+        await hre.run("abi-encode-withselector", {
           abi: ConnectMaker.abi,
           functionname: "open",
           inputs: ["ETH-A"],
@@ -145,15 +154,15 @@ describe("Gelato Provider Payment Connector unit test", function () {
       userAddress
     );
 
-    let cdps = await getCdps.getCdpsAsc(dssCdpManager.address, dsa.address);
+    const cdps = await getCdps.getCdpsAsc(dssCdpManager.address, dsa.address);
     cdpId = String(cdps.ids[0]);
 
     expect(cdps.ids[0].isZero()).to.be.false;
 
     await dsa.cast(
-      [bre.network.config.ConnectMaker],
+      [hre.network.config.ConnectMaker],
       [
-        await bre.run("abi-encode-withselector", {
+        await hre.run("abi-encode-withselector", {
           abi: ConnectMaker.abi,
           functionname: "deposit",
           inputs: [cdpId, ethers.utils.parseEther("10"), 0, 0],
@@ -165,9 +174,9 @@ describe("Gelato Provider Payment Connector unit test", function () {
       }
     );
     await dsa.cast(
-      [bre.network.config.ConnectMaker],
+      [hre.network.config.ConnectMaker],
       [
-        await bre.run("abi-encode-withselector", {
+        await hre.run("abi-encode-withselector", {
           abi: ConnectMaker.abi,
           functionname: "borrow",
           inputs: [cdpId, ethers.utils.parseUnits("1000", 18), 0, 0],
@@ -183,8 +192,10 @@ describe("Gelato Provider Payment Connector unit test", function () {
     await dsa.cast(
       [connectGelatoProviderPayment.address],
       [
-        await bre.run("abi-encode-withselector", {
-          abi: ConnectGelatoProviderPaymentABI.abi,
+        await hre.run("abi-encode-withselector", {
+          abi: (
+            await hre.artifacts.readArtifact("ConnectGelatoProviderPayment")
+          ).abi,
           functionname: "payProvider",
           inputs: [
             providerAddress,
@@ -204,12 +215,12 @@ describe("Gelato Provider Payment Connector unit test", function () {
   });
 
   it("#2: payProvider should pay to Provider 1 ether", async function () {
-    let providerBalanceBefore = await providerWallet.getBalance();
+    const providerBalanceBefore = await providerWallet.getBalance();
 
     await dsa.cast(
       [connectBasic.address, connectGelatoProviderPayment.address],
       [
-        await bre.run("abi-encode-withselector", {
+        await hre.run("abi-encode-withselector", {
           abi: ConnectBasic.abi,
           functionname: "deposit",
           inputs: [
@@ -219,8 +230,10 @@ describe("Gelato Provider Payment Connector unit test", function () {
             "105",
           ],
         }),
-        await bre.run("abi-encode-withselector", {
-          abi: ConnectGelatoProviderPaymentABI.abi,
+        await hre.run("abi-encode-withselector", {
+          abi: (
+            await hre.artifacts.readArtifact("ConnectGelatoProviderPayment")
+          ).abi,
           functionname: "payProvider",
           inputs: [
             providerAddress,
@@ -243,11 +256,11 @@ describe("Gelato Provider Payment Connector unit test", function () {
   });
 
   it("#3: payProvider should return error message ConnectGelatoProviderPayment.payProvider:INVALIDADDESS when provider is Zero Address", async function () {
-    expect(
+    await expect(
       dsa.cast(
         [connectBasic.address, connectGelatoProviderPayment.address],
         [
-          await bre.run("abi-encode-withselector", {
+          await hre.run("abi-encode-withselector", {
             abi: ConnectBasic.abi,
             functionname: "deposit",
             inputs: [
@@ -257,8 +270,10 @@ describe("Gelato Provider Payment Connector unit test", function () {
               "105",
             ],
           }),
-          await bre.run("abi-encode-withselector", {
-            abi: ConnectGelatoProviderPaymentABI.abi,
+          await hre.run("abi-encode-withselector", {
+            abi: (
+              await hre.artifacts.readArtifact("ConnectGelatoProviderPayment")
+            ).abi,
             functionname: "payProvider",
             inputs: [
               ethers.constants.AddressZero,
@@ -274,8 +289,6 @@ describe("Gelato Provider Payment Connector unit test", function () {
           value: ethers.utils.parseEther("1"),
         }
       )
-    ).to.be.revertedWith(
-      "ConnectGelatoProviderPayment.payProvider:INVALIDADDESS."
-    );
+    ).to.be.revertedWith("ConnectGelatoProviderPayment.payProvider:addr0");
   });
 });

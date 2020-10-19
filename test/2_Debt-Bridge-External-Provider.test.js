@@ -1,10 +1,9 @@
 const {expect} = require("chai");
-const bre = require("@nomiclabs/buidler");
-const {constants} = require("ethers");
-const {ethers} = bre;
+const hre = require("hardhat");
+const {ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
-// #region Contracts ABI
+// #region Contracts ABI and Constants
 
 const InstaIndex = require("../pre-compiles/InstaIndex.json");
 const InstaList = require("../pre-compiles/InstaList.json");
@@ -14,97 +13,111 @@ const ConnectMaker = require("../pre-compiles/ConnectMaker.json");
 const ConnectCompound = require("../pre-compiles/ConnectCompound.json");
 const ConnectInstaPool = require("../pre-compiles/ConnectInstaPool.json");
 const ConnectAuth = require("../pre-compiles/ConnectAuth.json");
-const ConnectGelatoDebtBridgeABI = require("../artifacts/ConnectGelatoDebtBridge.json");
-const ConnectGelatoProviderPaymentABI = require("../artifacts/ConnectGelatoProviderPayment.json");
+const ConnectGelatoDebtBridgeFromMakerABI = require("../artifacts/contracts/connectors/ConnectGelatoDebtBridgeFromMaker.sol/ConnectGelatoDebtBridgeFromMaker.json")
+  .abi;
+const ConnectGelatoProviderPaymentABI = require("../artifacts/contracts/connectors/ConnectGelatoProviderPayment.sol/ConnectGelatoProviderPayment.json")
+  .abi;
 const InstaConnector = require("../pre-compiles/InstaConnectors.json");
 const DssCdpManager = require("../pre-compiles/DssCdpManager.json");
 const GetCdps = require("../pre-compiles/GetCdps.json");
 const IERC20 = require("../pre-compiles/IERC20.json");
 const CTokenInterface = require("../pre-compiles/CTokenInterface.json");
-const GelatoGasPriceOracle = require("../pre-compiles/GelatoGasPriceOracle.json");
 const CompoundResolver = require("../pre-compiles/InstaCompoundResolver.json");
+const PriceOracleResolverABI = require("../artifacts/contracts/resolvers/PriceOracleResolver.sol/PriceOracleResolver.json")
+  .abi;
 
 const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const GAS_LIMIT = "4000000";
 const GAS_PRICE_CEIL = ethers.utils.parseUnits("1000", "gwei");
 const WAD = ethers.utils.parseUnits("1", 18);
 
+// const ORACLE_MAKER_ETH_USD = "ETH/USD-Maker-v1";
+// const ORACLE_MAKER_ETH_USD_ADDR = "0x729D19f657BD0614b4985Cf1D82531c67569197B";
+// const PRICE_ORACLE_MAKER_PAYLOAD = "0x57de26a4"; // IMakerOracle.read()
+
+const MIN_COL_RATIO_MAKER = ethers.utils.parseUnits("3", 18);
+const MIN_COL_RATIO_B = ethers.utils.parseUnits("19", 17);
+
+// TO DO: make dynamic based on real time Collateral Price and Ratios
+const MAKER_INITIAL_ETH = ethers.utils.parseEther("10");
+const MAKER_INITIAL_DEBT = ethers.utils.parseUnits("1000", 18);
+
 // #endregion
 
 //#region Mock Math Function
 
-let wdiv = (x, y) => {
+function wdiv(x, y) {
   return x.mul(WAD).add(y.div(2)).div(y);
-};
+}
 
-let wmul = (x, y) => {
+function wmul(x, y) {
   return x.mul(y).add(WAD.div(2)).div(WAD);
-};
+}
 
-let wcollateralToWithdraw = (
-  wantedLiquidationRatioOnProtocol1,
-  wantedLiquidationRatioOnProtocol2,
-  collateral,
-  borrowedToken,
-  collateralPrice
-) => {
+function wCalcCollateralToWithdraw(
+  minColRatioOnMaker,
+  minColRatioOnPositionB,
+  collateralPrice,
+  pricedCollateral,
+  daiDebtOnMaker
+) {
   //#region CALCULATION REPLICATION
 
   let expectedColToWithdraw = wmul(
-    wmul(wantedLiquidationRatioOnProtocol1, wantedLiquidationRatioOnProtocol2),
-    borrowedToken
+    wmul(minColRatioOnMaker, minColRatioOnPositionB),
+    daiDebtOnMaker
   ); // doc ref : c_r x comp_r x d_2
   expectedColToWithdraw = expectedColToWithdraw.sub(
-    wmul(wantedLiquidationRatioOnProtocol1, collateral)
+    wmul(minColRatioOnMaker, pricedCollateral)
   ); // doc ref : c_r x comp_r x d_2 - c_r x e_2
   expectedColToWithdraw = wdiv(
     expectedColToWithdraw,
-    wantedLiquidationRatioOnProtocol2.sub(wantedLiquidationRatioOnProtocol1)
+    minColRatioOnPositionB.sub(minColRatioOnMaker)
   ); // doc ref : (c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r)
-  expectedColToWithdraw = collateral.sub(expectedColToWithdraw); // doc ref : e_2 - ((c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r))
+  expectedColToWithdraw = pricedCollateral.sub(expectedColToWithdraw); // doc ref : e_2 - ((c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r))
 
   // Extra step to convert back to col type
   expectedColToWithdraw = wdiv(expectedColToWithdraw, collateralPrice);
 
   //#endregion
   return expectedColToWithdraw;
-};
+}
 
-let wborrowedTokenToPayback = (
-  wantedLiquidationRatioOnProtocol1,
-  wantedLiquidationRatioOnProtocol2,
-  collateral,
-  borrowedToken
-) => {
+function wCalcDebtToRepay(
+  minColRatioOnMaker,
+  minColRatioOnPositionB,
+  pricedCollateral,
+  daiDebtOnMaker
+) {
   //#region CALCULATION REPLICATION
 
   let expectedBorToPayBack = wmul(
-    wmul(wantedLiquidationRatioOnProtocol1, wantedLiquidationRatioOnProtocol2),
-    borrowedToken
+    wmul(minColRatioOnMaker, minColRatioOnPositionB),
+    daiDebtOnMaker
   ); // doc ref : c_r x comp_r x d_2
   expectedBorToPayBack = expectedBorToPayBack.sub(
-    wmul(wantedLiquidationRatioOnProtocol1, collateral)
+    wmul(minColRatioOnMaker, pricedCollateral)
   ); // doc ref : c_r x comp_r x d_2 - c_r x e_2
   expectedBorToPayBack = wdiv(
     expectedBorToPayBack,
-    wantedLiquidationRatioOnProtocol2.sub(wantedLiquidationRatioOnProtocol1)
+    minColRatioOnPositionB.sub(minColRatioOnMaker)
   ); // doc ref : (c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r)
   expectedBorToPayBack = wmul(
-    wdiv(ethers.utils.parseUnits("1", 18), wantedLiquidationRatioOnProtocol1),
+    wdiv(ethers.utils.parseUnits("1", 18), minColRatioOnMaker),
     expectedBorToPayBack
   ); // doc ref : (1/c_r)((c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r))
-  expectedBorToPayBack = borrowedToken.sub(expectedBorToPayBack); // doc ref : d_2 - (1/c_r)((c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r))
+  expectedBorToPayBack = daiDebtOnMaker.sub(expectedBorToPayBack); // doc ref : d_2 - (1/c_r)((c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r))
 
   //#endregion
   return expectedBorToPayBack;
-};
+}
 
 //#endregion
 
 describe("Debt Bridge with External Provider", function () {
   this.timeout(0);
-  if (bre.network.name !== "ganache") {
-    console.error("Test Suite is meant to be run on ganache only");
+  if (hre.network.name !== "hardhat") {
+    console.error("Test Suite is meant to be run on hardhat only");
     process.exit(1);
   }
 
@@ -113,6 +126,8 @@ describe("Debt Bridge with External Provider", function () {
   let userAddress;
   let providerWallet;
   let providerAddress;
+  let executorWallet;
+  let executorAddress;
 
   // Deployed instances
   let connectGelato;
@@ -129,33 +144,36 @@ describe("Debt Bridge with External Provider", function () {
   let cEthToken;
   let instaMaster;
   let instaConnectors;
-  let gelatoGasPriceOracle;
   let compoundResolver;
 
   // Contracts to deploy and use for local testing
-  let conditionMakerVaultIsSafe;
-  let connectGelatoDebtBridge;
+  let conditionMakerVaultUnsafe;
+  let connectGelatoDebtBridgeFromMaker;
   let connectGelatoProviderPayment;
-  let oracleAggregator;
+  let priceOracleResolver;
   let dsaProviderModule;
 
   // Creation during test
   let dsa;
-  let connectedGelatoCore;
+
+  // Payload Params for ConnectGelatoDebtBridgeFromMaker and ConditionMakerVaultUnsafe
+  let vaultId;
+
+  // For TaskSpec and for Task
+  let spells = [];
 
   before(async function () {
     // Get Test Wallet for local testnet
-    [userWallet] = await ethers.getSigners();
+    [userWallet, providerWallet, executorWallet] = await ethers.getSigners();
     userAddress = await userWallet.getAddress();
-
-    [, providerWallet] = await ethers.getSigners();
     providerAddress = await providerWallet.getAddress();
+    executorAddress = await executorWallet.getAddress();
 
     instaMaster = await ethers.provider.getSigner(
-      bre.network.config.InstaMaster
+      hre.network.config.InstaMaster
     );
 
-    // Ganache default accounts prefilled with 100 ETH
+    // Hardhat default accounts prefilled with 100 ETH
     expect(await userWallet.getBalance()).to.be.gt(
       ethers.utils.parseEther("10")
     );
@@ -163,99 +181,89 @@ describe("Debt Bridge with External Provider", function () {
     // ===== Get Deployed Contract Instance ==================
     instaIndex = await ethers.getContractAt(
       InstaIndex.abi,
-      bre.network.config.InstaIndex
+      hre.network.config.InstaIndex
     );
     instaList = await ethers.getContractAt(
       InstaList.abi,
-      bre.network.config.InstaList
+      hre.network.config.InstaList
     );
     connectGelato = await ethers.getContractAt(
       ConnectGelato.abi,
-      bre.network.config.ConnectGelato
+      hre.network.config.ConnectGelato
     );
     connectMaker = await ethers.getContractAt(
       ConnectMaker.abi,
-      bre.network.config.ConnectMaker
+      hre.network.config.ConnectMaker
     );
     connectInstaPool = await ethers.getContractAt(
       ConnectInstaPool.abi,
-      bre.network.config.ConnectInstaPool
+      hre.network.config.ConnectInstaPool
     );
     connectCompound = await ethers.getContractAt(
       ConnectCompound.abi,
-      bre.network.config.ConnectCompound
+      hre.network.config.ConnectCompound
     );
     dssCdpManager = await ethers.getContractAt(
       DssCdpManager.abi,
-      bre.network.config.DssCdpManager
+      hre.network.config.DssCdpManager
     );
     getCdps = await ethers.getContractAt(
       GetCdps.abi,
-      bre.network.config.GetCdps
+      hre.network.config.GetCdps
     );
-    daiToken = await ethers.getContractAt(IERC20.abi, bre.network.config.DAI);
+    daiToken = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
     gelatoCore = await ethers.getContractAt(
       GelatoCoreLib.GelatoCore.abi,
-      bre.network.config.GelatoCore
+      hre.network.config.GelatoCore
     );
     cDaiToken = await ethers.getContractAt(
       CTokenInterface.abi,
-      bre.network.config.CDAI
+      hre.network.config.CDAI
     );
     cEthToken = await ethers.getContractAt(
       CTokenInterface.abi,
-      bre.network.config.CETH
+      hre.network.config.CETH
     );
     instaConnectors = await ethers.getContractAt(
       InstaConnector.abi,
-      bre.network.config.InstaConnectors
-    );
-    gelatoGasPriceOracle = await ethers.getContractAt(
-      GelatoGasPriceOracle.abi,
-      bre.network.config.GelatoGasPriceOracle
+      hre.network.config.InstaConnectors
     );
     compoundResolver = await ethers.getContractAt(
       CompoundResolver.abi,
-      bre.network.config.CompoundResolver
+      hre.network.config.CompoundResolver
     );
     // instaEvent = await ethers.getContractAt(
     //     InstaEvent.abi,
-    //     bre.network.config.InstaEvent
+    //     hre.network.config.InstaEvent
     // )
 
     // ===== Deploy Needed Contract ==================
 
-    const OracleAggregator = await ethers.getContractFactory(
-      "OracleAggregator"
+    const PriceOracleResolver = await ethers.getContractFactory(
+      "PriceOracleResolver"
     );
-    oracleAggregator = await OracleAggregator.deploy();
-    await oracleAggregator.deployed();
+    priceOracleResolver = await PriceOracleResolver.deploy();
+    await priceOracleResolver.deployed();
 
-    const ConditionMakerVaultIsSafe = await ethers.getContractFactory(
-      "ConditionMakerVaultIsSafe"
+    const ConditionMakerVaultUnsafe = await ethers.getContractFactory(
+      "ConditionMakerVaultUnsafe"
     );
-    conditionMakerVaultIsSafe = await ConditionMakerVaultIsSafe.deploy(
-      oracleAggregator.address
-    );
-    await conditionMakerVaultIsSafe.deployed();
+    conditionMakerVaultUnsafe = await ConditionMakerVaultUnsafe.deploy();
+    await conditionMakerVaultUnsafe.deployed();
 
-    const connectorLength = await instaConnectors.connectorLength();
-    const connectorId = connectorLength.add(1);
-
-    const ConnectGelatoDebtBridge = await ethers.getContractFactory(
-      "ConnectGelatoDebtBridge"
+    const ConnectGelatoDebtBridgeFromMaker = await ethers.getContractFactory(
+      "ConnectGelatoDebtBridgeFromMaker"
     );
-    connectGelatoDebtBridge = await ConnectGelatoDebtBridge.deploy(
-      connectorId,
-      oracleAggregator.address
+    connectGelatoDebtBridgeFromMaker = await ConnectGelatoDebtBridgeFromMaker.deploy(
+      (await instaConnectors.connectorLength()).add(1)
     );
-    await connectGelatoDebtBridge.deployed();
+    await connectGelatoDebtBridgeFromMaker.deployed();
 
     const ConnectGelatoProviderPayment = await ethers.getContractFactory(
       "ConnectGelatoProviderPayment"
     );
     connectGelatoProviderPayment = await ConnectGelatoProviderPayment.deploy(
-      connectorId.add(1)
+      (await instaConnectors.connectorLength()).add(2)
     );
     await connectGelatoProviderPayment.deployed();
 
@@ -263,8 +271,7 @@ describe("Debt Bridge with External Provider", function () {
       "ProviderModuleDSA"
     );
     dsaProviderModule = await ProviderModuleDSA.deploy(
-      bre.network.config.InstaIndex,
-      bre.network.config.GelatoCore,
+      hre.network.config.GelatoCore,
       connectGelatoProviderPayment.address
     );
     await dsaProviderModule.deployed();
@@ -276,25 +283,29 @@ describe("Debt Bridge with External Provider", function () {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Gelato Testing environment setup.
-    // Step 1 : Add EUR/USD Maker Medianizer in the Oracle Aggregator
+    // Step 1 : Add EUR/USD Maker Medianizer in the PriceOracleResolver
     // Step 2 : Enable Debt Bridge Connector and Gelato Provider Payment Connector
     // Step 3 : Executor Staking on Gelato
     // Step 4 : Provider put some fund on gelato for paying future tasks executions
     // Step 5 : Provider choose a executor
     // Step 6 : Provider will add a module
-    // Step 7 : Provider should whitelist task
+    // Step 7 : User create a DeFi Smart Account
+    // Step 8 : User open a Vault, put some ether on it and borrow some dai
+    // Step 9 : User give authorization to gelato to use his DSA on his behalf.
+    // Step 10 : Provider should whitelist task
 
-    //#region Step 1 Add EUR/USD Maker Medianizer in the Oracle Aggregator
+    //#region Step 1 Add EUR/USD Maker Medianizer in the PriceOracleResolver
 
-    // Oracle Aggregator is a price feeder aggregator
+    // PriceOracleResolver is a price feeder aggregator
     // You will be able to query price from multiple source through this aggregator
     // For the demo we add the ETH/USD Medianizer to the aggregator
     // MakerDAO price oracle are called Medianizer
 
-    await oracleAggregator.addOracle(
-      "ETH/USD",
-      "0x729D19f657BD0614b4985Cf1D82531c67569197B"
-    );
+    // await priceOracleResolver.addOracle(
+    //   ORACLE_MAKER_ETH_USD,
+    //   ORACLE_MAKER_ETH_USD_ADDR,
+    //   PRICE_ORACLE_MAKER_PAYLOAD
+    // );
 
     //#endregion
 
@@ -310,18 +321,32 @@ describe("Debt Bridge with External Provider", function () {
     // be executed. Improvind user experience.
 
     await userWallet.sendTransaction({
-      to: bre.network.config.InstaMaster,
+      to: hre.network.config.InstaMaster,
       value: ethers.utils.parseEther("0.1"),
     });
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [await instaMaster.getAddress()],
+    });
+
     await instaConnectors
       .connect(instaMaster)
-      .enable(connectGelatoDebtBridge.address);
+      .enable(connectGelatoDebtBridgeFromMaker.address);
+
     await instaConnectors
       .connect(instaMaster)
       .enable(connectGelatoProviderPayment.address);
 
+    await hre.network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [await instaMaster.getAddress()],
+    });
+
     expect(
-      await instaConnectors.isConnector([connectGelatoDebtBridge.address])
+      await instaConnectors.isConnector([
+        connectGelatoDebtBridgeFromMaker.address,
+      ])
     ).to.be.true;
     expect(
       await instaConnectors.isConnector([connectGelatoProviderPayment.address])
@@ -338,16 +363,11 @@ describe("Debt Bridge with External Provider", function () {
     // For safety measure Gelato ask the executor to stake a minimum
     // amount.
 
-    connectedGelatoCore = gelatoCore.connect(providerWallet);
-    gelatoCore = gelatoCore.connect(userWallet);
-    await connectedGelatoCore.stakeExecutor({
-      from: providerAddress,
-      value: await connectedGelatoCore.minExecutorStake(),
+    await gelatoCore.connect(executorWallet).stakeExecutor({
+      value: await gelatoCore.minExecutorStake(),
     });
 
-    expect(
-      await connectedGelatoCore.isExecutorMinStaked(providerAddress)
-    ).to.be.true;
+    expect(await gelatoCore.isExecutorMinStaked(executorAddress)).to.be.true;
 
     //#endregion
 
@@ -364,14 +384,14 @@ describe("Debt Bridge with External Provider", function () {
     );
 
     await expect(
-      connectedGelatoCore.provideFunds(providerAddress, {
+      gelatoCore.connect(providerWallet).provideFunds(providerAddress, {
         value: TASK_AUTOMATION_FUNDS,
       })
     ).to.emit(gelatoCore, "LogFundsProvided");
 
-    expect(
-      await connectedGelatoCore.providerFunds(providerAddress)
-    ).to.be.equal(TASK_AUTOMATION_FUNDS);
+    expect(await gelatoCore.providerFunds(providerAddress)).to.be.equal(
+      TASK_AUTOMATION_FUNDS
+    );
 
     //#endregion
 
@@ -381,12 +401,14 @@ describe("Debt Bridge with External Provider", function () {
     // for the provider, it will be compensated by the provider.
 
     await expect(
-      connectedGelatoCore.providerAssignsExecutor(providerAddress)
+      gelatoCore
+        .connect(providerWallet)
+        .providerAssignsExecutor(executorAddress)
     ).to.emit(gelatoCore, "LogProviderAssignedExecutor");
 
-    expect(
-      await connectedGelatoCore.executorByProvider(providerAddress)
-    ).to.be.equal(providerAddress);
+    expect(await gelatoCore.executorByProvider(providerAddress)).to.be.equal(
+      executorAddress
+    );
 
     //#endregion
 
@@ -397,156 +419,20 @@ describe("Debt Bridge with External Provider", function () {
     // Payment connector for receiving payment of User.
 
     await expect(
-      connectedGelatoCore.addProviderModules([dsaProviderModule.address])
+      gelatoCore
+        .connect(providerWallet)
+        .addProviderModules([dsaProviderModule.address])
     ).to.emit(gelatoCore, "LogProviderModuleAdded");
 
     expect(
-      await connectedGelatoCore.isModuleProvided(
-        providerAddress,
-        dsaProviderModule.address
-      )
+      await gelatoCore
+        .connect(providerWallet)
+        .isModuleProvided(providerAddress, dsaProviderModule.address)
     ).to.be.true;
 
     //#endregion
 
-    //#region Step 7 Provider should whitelist task
-
-    // By WhiteList task, the provider can constrain the type
-    // of task the user can submitting.
-
-    //#region Actions
-
-    const spells = [];
-
-    let debtBridge = new GelatoCoreLib.Action({
-      addr: connectGelatoDebtBridge.address,
-      data: constants.HashZero,
-      operation: GelatoCoreLib.Operation.Delegatecall,
-      dataFlow: GelatoCoreLib.DataFlow.None,
-      termsOkCheck: false,
-      value: 0,
-    });
-
-    spells.push(debtBridge);
-
-    let flashBorrow = new GelatoCoreLib.Action({
-      addr: connectInstaPool.address,
-      data: constants.HashZero,
-      operation: GelatoCoreLib.Operation.Delegatecall,
-      dataFlow: GelatoCoreLib.DataFlow.None,
-      termsOkCheck: false,
-      value: 0,
-    });
-
-    spells.push(flashBorrow);
-
-    let paybackMaker = new GelatoCoreLib.Action({
-      addr: connectMaker.address,
-      data: constants.HashZero,
-      operation: GelatoCoreLib.Operation.Delegatecall,
-      dataFlow: GelatoCoreLib.DataFlow.None,
-      termsOkCheck: false,
-      value: 0,
-    });
-
-    spells.push(paybackMaker);
-
-    let withdrawMaker = new GelatoCoreLib.Action({
-      addr: connectMaker.address,
-      data: constants.HashZero,
-      operation: GelatoCoreLib.Operation.Delegatecall,
-      dataFlow: GelatoCoreLib.DataFlow.None,
-      termsOkCheck: false,
-      value: 0,
-    });
-
-    spells.push(withdrawMaker);
-
-    let depositCompound = new GelatoCoreLib.Action({
-      addr: connectCompound.address,
-      data: constants.HashZero,
-      operation: GelatoCoreLib.Operation.Delegatecall,
-      dataFlow: GelatoCoreLib.DataFlow.None,
-      termsOkCheck: false,
-      value: 0,
-    });
-
-    spells.push(depositCompound);
-
-    let borrowCompound = new GelatoCoreLib.Action({
-      addr: connectCompound.address,
-      data: constants.HashZero,
-      operation: GelatoCoreLib.Operation.Delegatecall,
-      dataFlow: GelatoCoreLib.DataFlow.None,
-      termsOkCheck: false,
-      value: 0,
-    });
-
-    spells.push(borrowCompound);
-
-    let flashPayBack = new GelatoCoreLib.Action({
-      addr: connectInstaPool.address,
-      data: constants.HashZero,
-      operation: GelatoCoreLib.Operation.Delegatecall,
-      dataFlow: GelatoCoreLib.DataFlow.None,
-      termsOkCheck: false,
-      value: 0,
-    });
-
-    spells.push(flashPayBack);
-
-    let payProvider = new GelatoCoreLib.Action({
-      addr: connectGelatoProviderPayment.address,
-      data: constants.HashZero,
-      operation: GelatoCoreLib.Operation.Delegatecall,
-      dataFlow: GelatoCoreLib.DataFlow.None,
-      termsOkCheck: false,
-      value: 0,
-    });
-
-    spells.push(payProvider);
-
-    const gasPriceCeil = constants.MaxUint256;
-
-    const gelatoFlashLoanTaskSpec = new GelatoCoreLib.TaskSpec({
-      conditions: [conditionMakerVaultIsSafe.address],
-      actions: spells,
-      gasPriceCeil,
-    });
-
-    await expect(
-      connectedGelatoCore.provideTaskSpecs([gelatoFlashLoanTaskSpec])
-    ).to.emit(gelatoCore, "LogTaskSpecProvided");
-
-    expect(
-      await connectedGelatoCore.isTaskSpecProvided(
-        providerAddress,
-        gelatoFlashLoanTaskSpec
-      )
-    ).to.be.equal("OK");
-
-    expect(
-      await connectedGelatoCore.taskSpecGasPriceCeil(
-        providerAddress,
-        await connectedGelatoCore.hashTaskSpec(gelatoFlashLoanTaskSpec)
-      )
-    ).to.be.equal(gasPriceCeil);
-
-    //#endregion
-
-    //#endregion
-  });
-
-  it("#1: Use Maker Compound refinancing if the maker vault become unsafe after a market move.", async function () {
-    // User Actions
-    // Step 1 : User create a DeFi Smart Account
-    // Step 2 : User open a Vault, put some ether on it and borrow some dai
-    // Step 3 : User give authorization to gelato to use his DSA on his behalf.
-    // Step 4 : User submit a Debt Refinancing task if market move against him
-    // Step 5 : Market Move against the user (Mock)
-    // Step 6 : Executor execute the user's task
-
-    //#region Step 1 User create a DeFi Smart Account
+    //#region Step 7 User create a DeFi Smart Account
 
     // User create a Instadapp DeFi Smart Account
     // who give him the possibility to interact
@@ -570,61 +456,58 @@ describe("Debt Bridge with External Provider", function () {
 
     //#endregion
 
-    //#region Step 2 User open a Vault, put some ether on it and borrow some dai
+    //#region Step 8 User open a Vault, put some ether on it and borrow some dai
 
     // User open a maker vault
     // He deposit 10 Eth on it
     // He borrow a 1000 DAI
 
-    const openVault = await bre.run("abi-encode-withselector", {
+    const openVault = await hre.run("abi-encode-withselector", {
       abi: ConnectMaker.abi,
       functionname: "open",
       inputs: ["ETH-A"],
     });
 
-    await dsa.cast([bre.network.config.ConnectMaker], [openVault], userAddress);
+    await dsa.cast([hre.network.config.ConnectMaker], [openVault], userAddress);
 
-    let cdps = await getCdps.getCdpsAsc(dssCdpManager.address, dsa.address);
-    let cdpId = String(cdps.ids[0]);
-
+    const cdps = await getCdps.getCdpsAsc(dssCdpManager.address, dsa.address);
+    vaultId = String(cdps.ids[0]);
     expect(cdps.ids[0].isZero()).to.be.false;
 
     await dsa.cast(
-      [bre.network.config.ConnectMaker],
+      [hre.network.config.ConnectMaker],
       [
-        await bre.run("abi-encode-withselector", {
+        await hre.run("abi-encode-withselector", {
           abi: ConnectMaker.abi,
           functionname: "deposit",
-          inputs: [cdpId, ethers.utils.parseEther("10"), 0, 0],
+          inputs: [vaultId, MAKER_INITIAL_ETH, 0, 0],
         }),
       ],
       userAddress,
       {
-        value: ethers.utils.parseEther("10"),
+        value: MAKER_INITIAL_ETH,
       }
     );
 
-    let makerVaultInitialBorrow = ethers.utils.parseUnits("1000", 18);
-
     await dsa.cast(
-      [bre.network.config.ConnectMaker],
+      [hre.network.config.ConnectMaker],
       [
-        await bre.run("abi-encode-withselector", {
+        await hre.run("abi-encode-withselector", {
           abi: ConnectMaker.abi,
           functionname: "borrow",
-          inputs: [cdpId, makerVaultInitialBorrow, 0, 0],
+          inputs: [vaultId, MAKER_INITIAL_DEBT, 0, 0],
         }),
       ],
       userAddress
     );
 
     expect(await daiToken.balanceOf(dsa.address)).to.be.equal(
-      ethers.utils.parseEther("1000")
+      MAKER_INITIAL_DEBT
     );
 
     //#endregion
 
-    //#region Step 3 User give authorization to gelato to use his DSA on his behalf.
+    //#region Step 9 User give authorization to gelato to use his DSA on his behalf.
 
     // Instadapp DSA contract give the possibility to the user to delegate
     // action by giving authorization.
@@ -632,9 +515,9 @@ describe("Debt Bridge with External Provider", function () {
     // task for him if needed.
 
     await dsa.cast(
-      [bre.network.config.ConnectAuth],
+      [hre.network.config.ConnectAuth],
       [
-        await bre.run("abi-encode-withselector", {
+        await hre.run("abi-encode-withselector", {
           abi: ConnectAuth.abi,
           functionname: "add",
           inputs: [gelatoCore.address],
@@ -647,41 +530,28 @@ describe("Debt Bridge with External Provider", function () {
 
     //#endregion
 
-    //#region Step 4 User submit a Debt Refinancing task if market move against him
+    //#region Step 10 Provider should whitelist task
 
-    // User submit the refinancing task if market move against him.
-    // So in this case if the maker vault go to the unsafe area
-    // the refinancing task will be executed and the position
-    // will be split on two position on maker and compound.
-    // It will be done through a algorithm that will optimize the
-    // total borrow rate.
+    // By WhiteList task, the provider can constrain the type
+    // of task the user can submitting.
 
-    let wantedLiquidationRatioOnProtocol1 = ethers.utils.parseUnits("3", 18);
-    let wantedLiquidationRatioOnProtocol2 = ethers.utils.parseUnits("19", 17);
-    let currencyPair = "ETH/USD";
+    //#region Actions
 
-    const debtBridgeCondition = new GelatoCoreLib.Condition({
-      inst: conditionMakerVaultIsSafe.address,
-      data: await conditionMakerVaultIsSafe.getConditionData(
-        cdpId,
-        "ETH/USD",
-        ethers.utils.parseUnits("3", 18)
-      ),
-    });
-
-    // ======= Action/Spells setup ======
-    const spells = [];
-
-    let debtBridgeCalculation = new GelatoCoreLib.Action({
-      addr: connectGelatoDebtBridge.address,
-      data: await bre.run("abi-encode-withselector", {
-        abi: ConnectGelatoDebtBridgeABI.abi,
-        functionname: "debtBridgeMakerToCompound",
+    const debtBridgeCalculation = new GelatoCoreLib.Action({
+      addr: connectGelatoDebtBridgeFromMaker.address,
+      data: await hre.run("abi-encode-withselector", {
+        abi: ConnectGelatoDebtBridgeFromMakerABI,
+        functionname: "saveDebtBridgeDataToMemory",
         inputs: [
-          cdpId,
-          wantedLiquidationRatioOnProtocol1,
-          wantedLiquidationRatioOnProtocol2,
-          currencyPair,
+          vaultId,
+          MIN_COL_RATIO_MAKER,
+          MIN_COL_RATIO_B,
+          priceOracleResolver.address,
+          await hre.run("abi-encode-withselector", {
+            abi: PriceOracleResolverABI,
+            functionname: "getMockPrice",
+            inputs: [userAddress],
+          }),
           0,
           0,
         ],
@@ -691,92 +561,163 @@ describe("Debt Bridge with External Provider", function () {
 
     spells.push(debtBridgeCalculation);
 
-    let flashBorrow = new GelatoCoreLib.Action({
+    const flashBorrow = new GelatoCoreLib.Action({
       addr: connectInstaPool.address,
-      data: await bre.run("abi-encode-withselector", {
+      data: await hre.run("abi-encode-withselector", {
         abi: ConnectInstaPool.abi,
         functionname: "flashBorrow",
-        inputs: [bre.network.config.DAI, 0, "100", 0],
+        inputs: [hre.network.config.DAI, 0, "600", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
 
     spells.push(flashBorrow);
 
-    let paybackMaker = new GelatoCoreLib.Action({
+    const paybackMaker = new GelatoCoreLib.Action({
       addr: connectMaker.address,
-      data: await bre.run("abi-encode-withselector", {
+      data: await hre.run("abi-encode-withselector", {
         abi: ConnectMaker.abi,
         functionname: "payback",
-        inputs: [cdpId, 0, "101", 0],
+        inputs: [vaultId, 0, "601", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
 
     spells.push(paybackMaker);
 
-    let withdrawMaker = new GelatoCoreLib.Action({
+    const withdrawMaker = new GelatoCoreLib.Action({
       addr: connectMaker.address,
-      data: await bre.run("abi-encode-withselector", {
+      data: await hre.run("abi-encode-withselector", {
         abi: ConnectMaker.abi,
         functionname: "withdraw",
-        inputs: [cdpId, 0, "102", 0],
+        inputs: [vaultId, 0, "602", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
 
     spells.push(withdrawMaker);
 
-    let depositCompound = new GelatoCoreLib.Action({
+    const depositCompound = new GelatoCoreLib.Action({
       addr: connectCompound.address,
-      data: await bre.run("abi-encode-withselector", {
+      data: await hre.run("abi-encode-withselector", {
         abi: ConnectCompound.abi,
         functionname: "deposit",
-        inputs: [ETH, 0, "103", 0],
+        inputs: [ETH, 0, "603", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
 
     spells.push(depositCompound);
 
-    let borrowCompound = new GelatoCoreLib.Action({
+    const borrowCompound = new GelatoCoreLib.Action({
       addr: connectCompound.address,
-      data: await bre.run("abi-encode-withselector", {
+      data: await hre.run("abi-encode-withselector", {
         abi: ConnectCompound.abi,
         functionname: "borrow",
-        inputs: [bre.network.config.DAI, 0, "104", 0],
+        inputs: [hre.network.config.DAI, 0, "604", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
 
     spells.push(borrowCompound);
 
-    let flashPayBack = new GelatoCoreLib.Action({
+    const flashPayBack = new GelatoCoreLib.Action({
       addr: connectInstaPool.address,
-      data: await bre.run("abi-encode-withselector", {
+      data: await hre.run("abi-encode-withselector", {
         abi: ConnectInstaPool.abi,
         functionname: "flashPayback",
-        inputs: [bre.network.config.DAI, 0, 0],
+        inputs: [hre.network.config.DAI, 0, 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
 
     spells.push(flashPayBack);
 
-    let payProvider = new GelatoCoreLib.Action({
+    const payProvider = new GelatoCoreLib.Action({
       addr: connectGelatoProviderPayment.address,
-      data: await bre.run("abi-encode-withselector", {
-        abi: ConnectGelatoProviderPaymentABI.abi,
+      data: await hre.run("abi-encode-withselector", {
+        abi: ConnectGelatoProviderPaymentABI,
         functionname: "payProvider",
-        inputs: [ethers.constants.AddressZero, ETH, 0, "105", 0],
+        inputs: [providerAddress, ETH, 0, "605", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
 
     spells.push(payProvider);
 
+    const gasPriceCeil = ethers.constants.MaxUint256;
+
+    const connectGelatoDebtBridgeFromMakerTaskSpec = new GelatoCoreLib.TaskSpec(
+      {
+        conditions: [conditionMakerVaultUnsafe.address],
+        actions: spells,
+        gasPriceCeil,
+      }
+    );
+
+    await expect(
+      gelatoCore
+        .connect(providerWallet)
+        .provideTaskSpecs([connectGelatoDebtBridgeFromMakerTaskSpec])
+    ).to.emit(gelatoCore, "LogTaskSpecProvided");
+
+    expect(
+      await gelatoCore
+        .connect(providerWallet)
+        .isTaskSpecProvided(
+          providerAddress,
+          connectGelatoDebtBridgeFromMakerTaskSpec
+        )
+    ).to.be.equal("OK");
+
+    expect(
+      await gelatoCore
+        .connect(providerWallet)
+        .taskSpecGasPriceCeil(
+          providerAddress,
+          await gelatoCore
+            .connect(providerWallet)
+            .hashTaskSpec(connectGelatoDebtBridgeFromMakerTaskSpec)
+        )
+    ).to.be.equal(gasPriceCeil);
+
+    //#endregion
+
+    //#endregion
+  });
+
+  it("#1: Use Maker Compound refinancing if the maker vault become unsafe after a market move.", async function () {
+    // User Actions
+    // Step 1: User submit a Debt Refinancing task if market move against him
+    // Step 2: Market Move against the user (Mock)
+    // Step 3: Executor execute the user's task
+
+    //#region Step 1 User submit a Debt Refinancing task if market move against him
+
+    // User submit the refinancing task if market move against him.
+    // So in this case if the maker vault go to the unsafe area
+    // the refinancing task will be executed and the position
+    // will be split on two position on maker and compound.
+    // It will be done through a algorithm that will optimize the
+    // total borrow rate.
+
+    const conditionMakerVaultUnsafeObj = new GelatoCoreLib.Condition({
+      inst: conditionMakerVaultUnsafe.address,
+      data: await conditionMakerVaultUnsafe.getConditionData(
+        vaultId,
+        priceOracleResolver.address,
+        await hre.run("abi-encode-withselector", {
+          abi: PriceOracleResolverABI,
+          functionname: "getMockPrice",
+          inputs: [userAddress],
+        }),
+        MIN_COL_RATIO_MAKER
+      ),
+    });
+
+    // ======= GELATO TASK SETUP ======
     const refinanceIfCompoundBorrowIsBetter = new GelatoCoreLib.Task({
-      conditions: [debtBridgeCondition],
+      conditions: [conditionMakerVaultUnsafeObj],
       actions: spells,
     });
 
@@ -786,11 +727,12 @@ describe("Debt Bridge with External Provider", function () {
     });
 
     const expiryDate = 0;
+
     await expect(
       dsa.cast(
         [connectGelato.address], // targets
         [
-          await bre.run("abi-encode-withselector", {
+          await hre.run("abi-encode-withselector", {
             abi: ConnectGelato.abi,
             functionname: "submitTask",
             inputs: [
@@ -817,26 +759,34 @@ describe("Debt Bridge with External Provider", function () {
 
     //#endregion
 
-    //#region Step 5 Market Move against the user (Mock)
+    //#region Step 2 Market Move against the user (Mock)
 
     // Ether market price went from the current price to 250$
 
-    const gelatoGasPrice = await bre.run("fetchGelatoGasPrice");
+    const gelatoGasPrice = await hre.run("fetchGelatoGasPrice");
     expect(gelatoGasPrice).to.be.lte(GAS_PRICE_CEIL);
 
-    expect(
-      await connectedGelatoCore.canExec(taskReceipt, GAS_LIMIT, gelatoGasPrice)
-    ).to.be.equal("ConditionNotOk:NotOKMakerVaultIsSafe");
-
-    await oracleAggregator.mock(true, ethers.utils.parseUnits("250", 18));
+    // TO DO: base mock price off of real price data
+    await priceOracleResolver.setMockPrice(ethers.utils.parseUnits("400", 18));
 
     expect(
-      await connectedGelatoCore.canExec(taskReceipt, GAS_LIMIT, gelatoGasPrice)
+      await gelatoCore
+        .connect(executorWallet)
+        .canExec(taskReceipt, GAS_LIMIT, gelatoGasPrice)
+    ).to.be.equal("ConditionNotOk:MakerVaultNotUnsafe");
+
+    // TO DO: base mock price off of real price data
+    await priceOracleResolver.setMockPrice(ethers.utils.parseUnits("250", 18));
+
+    expect(
+      await gelatoCore
+        .connect(executorWallet)
+        .canExec(taskReceipt, GAS_LIMIT, gelatoGasPrice)
     ).to.be.equal("OK");
 
     //#endregion
 
-    //#region Step 6 Executor execute the user's task
+    //#region Step 3 Executor execute the user's task
 
     // The market move make the vault unsafe, so the executor
     // will execute the user's task to make the user position safe
@@ -844,62 +794,78 @@ describe("Debt Bridge with External Provider", function () {
 
     //#region EXPECTED OUTCOME
 
-    let latestPrice = await oracleAggregator.getMakerTokenPrice(currencyPair);
-    let fees = ethers.utils
+    const latestPrice = await priceOracleResolver.getMockPrice(userAddress);
+    const gasFeesPaidFromCol = ethers.utils
       .parseUnits(String(1933090 + 19331 * 2), 0)
-      .mul(await gelatoGasPriceOracle.latestAnswer());
-    let debt = await connectGelatoDebtBridge.getMakerVaultDebt(cdpId);
-    let collateral = wmul(
-      (await connectGelatoDebtBridge.getMakerVaultCollateralBalance(cdpId)).sub(
-        fees
-      ),
+      .mul(gelatoGasPrice);
+    const debtOnMakerBefore = await connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
+      vaultId
+    );
+    const pricedCollateral = wmul(
+      (
+        await connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+          vaultId
+        )
+      ).sub(gasFeesPaidFromCol),
       latestPrice
     );
 
-    let expectedColWithdrawAmount = wcollateralToWithdraw(
-      wantedLiquidationRatioOnProtocol1,
-      wantedLiquidationRatioOnProtocol2,
-      collateral,
-      debt,
-      latestPrice
+    const expectedColWithdrawAmount = wCalcCollateralToWithdraw(
+      MIN_COL_RATIO_MAKER,
+      MIN_COL_RATIO_B,
+      latestPrice,
+      pricedCollateral,
+      debtOnMakerBefore
     );
 
-    let expectedBorAmountToPayBack = wborrowedTokenToPayback(
-      wantedLiquidationRatioOnProtocol1,
-      wantedLiquidationRatioOnProtocol2,
-      collateral,
-      debt
+    const expectedBorAmountToPayBack = wCalcDebtToRepay(
+      MIN_COL_RATIO_MAKER,
+      MIN_COL_RATIO_B,
+      pricedCollateral,
+      debtOnMakerBefore
     );
 
-    //console.log(String(wdiv(collateral.sub(wmul(expectedColWithdrawAmount, latestPrice).add(fees)),debt.sub(expectedBorAmountToPayBack))));
+    //console.log(String(wdiv(pricedCollateral.sub(wmul(expectedColWithdrawAmount, latestPrice).add(gasFeesPaidFromCol)),debt.sub(expectedBorAmountToPayBack))));
 
     //#endregion
-
-    let providerBalanceBeforeExecution = await providerWallet.getBalance();
+    const providerBalanceBeforeExecution = await providerWallet.getBalance();
 
     await expect(
-      connectedGelatoCore.exec(taskReceipt, {
+      gelatoCore.connect(executorWallet).exec(taskReceipt, {
         gasPrice: gelatoGasPrice, // Exectutor must use gelatoGasPrice (Chainlink fast gwei)
         gasLimit: GAS_LIMIT,
       })
     ).to.emit(gelatoCore, "LogExecSuccess");
 
-    let providerBalanceAfterExecution = await providerWallet.getBalance();
+    // 🚧 For Debugging:
+    // const txResponse2 = await gelatoCore
+    //   .connect(providerWallet)
+    //   .exec(taskReceipt, {
+    //     gasPrice: gelatoGasPrice,
+    //     gasLimit: GAS_LIMIT,
+    //   });
+    // const {blockHash} = await txResponse2.wait();
+    // const logs = await ethers.provider.getLogs({blockHash});
+    // const iFace = new ethers.utils.Interface(GelatoCoreLib.GelatoCore.abi);
+    // for (const log of logs) {
+    //   console.log(iFace.parseLog(log).args.reason);
+    // }
+    // await GelatoCoreLib.sleep(10000);
 
-    expect(providerBalanceAfterExecution).to.be.gt(
+    expect(await providerWallet.getBalance()).to.be.gt(
       providerBalanceBeforeExecution
     );
 
     // compound position of DSA on cDai and cEth
-    let compoundPosition = await compoundResolver.getCompoundData(dsa.address, [
-      cDaiToken.address,
-      cEthToken.address,
-    ]);
+    const compoundPosition = await compoundResolver.getCompoundData(
+      dsa.address,
+      [cDaiToken.address, cEthToken.address]
+    );
 
     // https://compound.finance/docs/ctokens#exchange-rate
     // calculate cEth/ETH rate to convert back cEth to ETH
     // for comparing with the withdrew Ether to the deposited one.
-    let exchangeRateCethToEth = (await cEthToken.getCash())
+    const exchangeRateCethToEth = (await cEthToken.getCash())
       .add(await cEthToken.totalBorrows())
       .sub(await cEthToken.totalReserves())
       .div(await cEthToken.totalSupply());
@@ -909,30 +875,32 @@ describe("Debt Bridge with External Provider", function () {
       compoundPosition[0].borrowBalanceStoredUser
     );
 
-    // Estimated amount of collateral should be equal to the actual one read on compound contracts
+    // Estimated amount of pricedCollateral should be equal to the actual one read on compound contracts
     expect(
       expectedColWithdrawAmount.sub(
         compoundPosition[1].balanceOfUser.mul(exchangeRateCethToEth)
       )
     ).to.be.lt(ethers.utils.parseUnits("1", 12));
 
-    debt = await connectGelatoDebtBridge.getMakerVaultDebt(cdpId);
-    collateral = await connectGelatoDebtBridge.getMakerVaultCollateralBalance(
-      cdpId
+    const debtOnMakerAfter = await connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
+      vaultId
+    );
+    const collateralOnMakerAfter = await connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+      vaultId
     ); // in Ether.
 
     // Total Borrowed Amount on both protocol should equal to the initial borrowed amount on maker vault.
     expect(
-      debt
+      debtOnMakerAfter
         .add(compoundPosition[0].borrowBalanceStoredUser)
-        .sub(makerVaultInitialBorrow)
+        .sub(MAKER_INITIAL_DEBT)
     ).to.be.lte(ethers.utils.parseUnits("1", 0));
-    // Total Ether col on Maker and Compound (+ fees) should equal to the initial col on maker vault
+    // Total Ether col on Maker and Compound (+ gasFeesPaidFromCol) should equal to the initial col on maker vault
     expect(
       compoundPosition[1].balanceOfUser
         .mul(exchangeRateCethToEth)
-        .add(fees)
-        .add(collateral)
+        .add(gasFeesPaidFromCol)
+        .add(collateralOnMakerAfter)
         .sub(ethers.utils.parseEther("10"))
     ).to.be.lt(ethers.utils.parseUnits("1", 12));
 
@@ -944,21 +912,21 @@ describe("Debt Bridge with External Provider", function () {
           latestPrice
         ),
         compoundPosition[0].borrowBalanceStoredUser
-      ).sub(wantedLiquidationRatioOnProtocol2)
+      ).sub(MIN_COL_RATIO_MAKER)
     ).to.be.lt(ethers.utils.parseUnits("1", 12));
     expect(
       wdiv(
         wmul(
-          collateral,
-          await oracleAggregator.getMakerTokenPrice(currencyPair)
+          collateralOnMakerAfter,
+          await priceOracleResolver.getMockPrice(userAddress)
         ),
-        debt
-      ).sub(wantedLiquidationRatioOnProtocol1)
+        debtOnMakerAfter
+      ).sub(MIN_COL_RATIO_MAKER)
     ).to.be.lt(ethers.utils.parseUnits("1", 1));
 
     // DSA contain 1000 DAI
     expect(await daiToken.balanceOf(dsa.address)).to.be.equal(
-      makerVaultInitialBorrow
+      MAKER_INITIAL_DEBT
     );
 
     //#endregion

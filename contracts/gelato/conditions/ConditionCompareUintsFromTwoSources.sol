@@ -1,5 +1,5 @@
 // "SPDX-License-Identifier: UNLICENSED"
-pragma solidity 0.6.12;
+pragma solidity 0.7.4;
 
 import {
     GelatoConditionsStandard
@@ -9,7 +9,7 @@ import {IERC20} from "@gelatonetwork/core/contracts/external/IERC20.sol";
 import {
     IGelatoCore
 } from "@gelatonetwork/core/contracts/gelato_core/interfaces/IGelatoCore.sol";
-import {GelatoBytes} from "./GelatoBytes.sol";
+import {GelatoBytes} from "../../lib/GelatoBytes.sol";
 
 /// @notice A general contract for retrieving and comparing 2 uints from 2 contracts.
 /// @dev This contract only works if the refContracts fns returndata has a uint in
@@ -18,7 +18,7 @@ contract ConditionCompareUintsFromTwoSources is GelatoConditionsStandard {
     using GelatoBytes for bytes;
     using SafeMath for uint256;
 
-    /// @notice Helper to encode the Condition data field off-chain
+    /// @notice Helper to encode the Condition.data field off-chain
     function getConditionData(
         address _sourceA,
         address _sourceB,

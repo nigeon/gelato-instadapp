@@ -1,5 +1,7 @@
 // Buidler
-const {task, usePlugin, types} = require("@nomiclabs/buidler/config");
+const {task, types} = require("hardhat/config");
+require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-waffle");
 
 // Libraries
 const assert = require("assert");
@@ -9,20 +11,23 @@ const GelatoCoreLib = require("@gelatonetwork/core");
 
 // Process Env Variables
 require("dotenv").config();
-const INFURA_ID = process.env.INFURA_ID;
-assert.ok(INFURA_ID, "no Infura ID in process.env");
+// const INFURA_ID = process.env.INFURA_ID;
+// assert.ok(INFURA_ID, "no Infura ID in process.env");
+const ALCHEMY_ID = process.env.ALCHEMY_ID;
+assert.ok(ALCHEMY_ID, "no Alchemy ID in process.env");
 const INSTA_MASTER = "0xb1DC62EC38E6E3857a887210C38418E4A17Da5B2";
 
 // ================================= CONFIG =========================================
 module.exports = {
-  defaultNetwork: "ganache",
+  defaultNetwork: "hardhat",
   networks: {
-    ganache: {
-      timeout: 150000,
+    hardhat: {
       // Standard config
-      url: "http://localhost:8545",
-      fork: `https://mainnet.infura.io/v3/${INFURA_ID}`,
-      unlocked_accounts: [INSTA_MASTER],
+      // timeout: 150000,
+      forking: {
+        url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_ID}`,
+        blockNumber: 11104384,
+      },
       // Custom
       GelatoCore: "0x1d681d76ce96E4d70a88A00EBbcfc1E47808d0b8",
       GelatoGasPriceOracle: "0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C",
@@ -48,16 +53,11 @@ module.exports = {
       ProviderModuleDSA: "0x0C25452d20cdFeEd2983fa9b9b9Cf4E81D6f2fE2",
     },
   },
-  solc: {
-    version: "0.6.12",
-    optimizer: {enabled: true},
+  solidity: {
+    version: "0.7.4",
+    optimizer: {enabled: process.env.DEBUG ? false : true},
   },
 };
-
-// ================================= PLUGINS =========================================
-usePlugin("@nomiclabs/buidler-ethers");
-usePlugin("@nomiclabs/buidler-ganache");
-usePlugin("@nomiclabs/buidler-waffle");
 
 // ================================= TASKS =========================================
 task("abi-encode-withselector")
@@ -128,13 +128,13 @@ task(
 )
   .addOptionalParam("gelatocoreaddress")
   .addFlag("log", "Logs return values to stdout")
-  .setAction(async (taskArgs, bre) => {
+  .setAction(async (taskArgs, hre) => {
     try {
-      const gelatoCore = await bre.ethers.getContractAt(
+      const gelatoCore = await hre.ethers.getContractAt(
         GelatoCoreLib.GelatoCore.abi,
         taskArgs.gelatocoreaddress
           ? taskArgs.gelatocoreaddress
-          : bre.network.config.GelatoCore
+          : hre.network.config.GelatoCore
       );
 
       const oracleAbi = ["function latestAnswer() view returns (int256)"];
@@ -142,7 +142,7 @@ task(
       const gelatoGasPriceOracleAddress = await gelatoCore.gelatoGasPriceOracle();
 
       // Get gelatoGasPriceOracleAddress
-      const gelatoGasPriceOracle = await bre.ethers.getContractAt(
+      const gelatoGasPriceOracle = await hre.ethers.getContractAt(
         oracleAbi,
         gelatoGasPriceOracleAddress
       );

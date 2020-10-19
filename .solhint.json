@@ -5,8 +5,8 @@
     "prettier/prettier": "error",
     "code-complexity": ["warn", 5],
     "function-max-lines": ["warn", 40],
-    "max-states-count": ["warn", 2],
-    "reason-string": ["error", {"maxLength": 32}],
+    "max-states-count": ["warn", 3],
+    "reason-string": ["off", {"maxLength": 32}],
     "const-name-snakecase": "error",
     "contract-name-camelcase": "error",
     "event-name-camelcase": "error",
@@ -19,8 +19,8 @@
     "visibility-modifier-order": "error",
     "avoid-call-value": "off",
     "avoid-low-level-calls": "off",
-    "compiler-version": ["warn", "0.6.12"],
-    "func-visibility": ["error", {"ignoreConstructors": false}],
+    "compiler-version": ["warn", "0.7.4"],
+    "func-visibility": ["error", {"ignoreConstructors": true}],
     "no-inline-assembly": "off",
     "state-visibility": "error"
   }

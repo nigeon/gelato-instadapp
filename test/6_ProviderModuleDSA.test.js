@@ -1,6 +1,6 @@
 const {expect} = require("chai");
-const bre = require("@nomiclabs/buidler");
-const {ethers} = bre;
+const hre = require("hardhat");
+const {ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
 // #region Contracts ABI
@@ -10,16 +10,15 @@ const InstaList = require("../pre-compiles/InstaList.json");
 const InstaAccount = require("../pre-compiles/InstaAccount.json");
 const InstaIndex = require("../pre-compiles/InstaIndex.json");
 const InstaConnectors = require("../pre-compiles/InstaConnectors.json");
-const ConnectGelatoProviderPaymentABI = require("../artifacts/ConnectGelatoProviderPayment.json");
 
 const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
 // #endregion
 
-describe("Provider Module unit test", function () {
+describe("Provider Module Unit Test", function () {
   this.timeout(0);
-  if (bre.network.name !== "ganache") {
-    console.error("Test Suite is meant to be run on ganache only");
+  if (hre.network.name !== "hardhat") {
+    console.error("Test Suite is meant to be run on hardhat only");
     process.exit(1);
   }
 
@@ -45,26 +44,26 @@ describe("Provider Module unit test", function () {
     [, providerWallet] = await ethers.getSigners();
     providerAddress = await providerWallet.getAddress();
 
-    // Ganache default accounts prefilled with 100 ETH
+    // Hardhat default accounts prefilled with 100 ETH
     expect(await userWallet.getBalance()).to.be.gt(
       ethers.utils.parseEther("10")
     );
     /////////////////// Get Deployed Contract //////////////////
     instaIndex = await ethers.getContractAt(
       InstaIndex.abi,
-      bre.network.config.InstaIndex
+      hre.network.config.InstaIndex
     );
     instaConnectors = await ethers.getContractAt(
       InstaConnectors.abi,
-      bre.network.config.InstaConnectors
+      hre.network.config.InstaConnectors
     );
     gelatoCore = await ethers.getContractAt(
       GelatoCoreLib.GelatoCore.abi,
-      bre.network.config.GelatoCore
+      hre.network.config.GelatoCore
     );
     instaList = await ethers.getContractAt(
       InstaList.abi,
-      bre.network.config.InstaList
+      hre.network.config.InstaList
     );
 
     ////////////////// Deploy Needed Contracts ////////////////////////
@@ -83,7 +82,6 @@ describe("Provider Module unit test", function () {
       "ProviderModuleDSA"
     );
     providerModuleDSA = await ProviderModuleDSA.deploy(
-      instaIndex.address,
       gelatoCore.address,
       connectGelatoProviderPayment.address
     );
@@ -128,11 +126,21 @@ describe("Provider Module unit test", function () {
   // });
 
   it("#1: isProvided should return OK", async function () {
+    expect(await dsa.isAuth(gelatoCore.address)).to.be.false;
+
+    expect(
+      await providerModuleDSA.isProvided(
+        dsa.address,
+        ethers.constants.AddressZero,
+        [[], [], 0, 0]
+      )
+    ).to.not.be.equal("OK");
+
     // Give authorization to Gelato on user DSA
     await dsa.cast(
-      [bre.network.config.ConnectAuth],
+      [hre.network.config.ConnectAuth],
       [
-        await bre.run("abi-encode-withselector", {
+        await hre.run("abi-encode-withselector", {
           abi: ConnectAuth.abi,
           functionname: "add",
           inputs: [gelatoCore.address],
@@ -154,10 +162,11 @@ describe("Provider Module unit test", function () {
 
   it("#2: execPayload should return payload with the right provider", async function () {
     // Task creation for sending to execPayload
-    let payProvider = new GelatoCoreLib.Action({
+    const payProvider = new GelatoCoreLib.Action({
       addr: connectGelatoProviderPayment.address,
-      data: await bre.run("abi-encode-withselector", {
-        abi: ConnectGelatoProviderPaymentABI.abi,
+      data: await hre.run("abi-encode-withselector", {
+        abi: (await hre.artifacts.readArtifact("ConnectGelatoProviderPayment"))
+          .abi,
         functionname: "payProvider",
         inputs: [ethers.constants.AddressZero, ETH, 0, "105", 0],
       }),
@@ -169,7 +178,7 @@ describe("Provider Module unit test", function () {
       actions: [payProvider],
     });
 
-    let result = await providerModuleDSA.execPayload(
+    const result = await providerModuleDSA.execPayload(
       0,
       ethers.constants.AddressZero,
       providerAddress,
@@ -178,14 +187,14 @@ describe("Provider Module unit test", function () {
     );
 
     //#region retrieving the replaced provider address from the payload
-    let abi = new ethers.utils.AbiCoder();
+    const abi = new ethers.utils.AbiCoder();
 
-    let datas = abi.decode(
+    const datas = abi.decode(
       ["address[]", "bytes[]", "address"],
-      ethers.utils.hexDataSlice(result.payload, 4)
+      ethers.utils.hexDataSlice(result[0], 4)
     )[1];
 
-    let paymentReceivingAddress = abi.decode(
+    const paymentReceivingAddress = abi.decode(
       ["address", "address", "uint256", "uint256", "uint256"],
       ethers.utils.hexDataSlice(datas[0], 4)
     )[0];
