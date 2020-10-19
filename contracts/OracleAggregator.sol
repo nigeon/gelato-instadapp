@@ -10,9 +10,9 @@ interface IMakerPriceFeed {
 }
 
 contract OracleAggregatorStorage {
-    mapping(string => address) internal _makerOracle;
-    mapping(string => address) internal _compoundOracle;
-    mapping(string => address) internal _chainlinkOracle;
+    mapping(string => address) public makerOracle;
+    mapping(string => address) public compoundOracle;
+    mapping(string => address) public chainlinkOracle;
 }
 
 // 0x729D19f657BD0614b4985Cf1D82531c67569197B for ETH/USD medianizer it return value in wad standard.
@@ -37,10 +37,10 @@ contract OracleAggregator is OracleAggregatorStorage, Ownable, DSMath {
         // Desable linter for too long require statement
         // solhint-disable-next-line
         require(
-            _makerOracle[_pair] == address(0x0),
+            makerOracle[_pair] == address(0x0),
             "OracleAggregator.Maker: Oracle already set."
         );
-        _makerOracle[_pair] = _oracleAddress;
+        makerOracle[_pair] = _oracleAddress;
     }
 
     function getMakerTokenPrice(string memory _pair)
@@ -48,9 +48,15 @@ contract OracleAggregator is OracleAggregatorStorage, Ownable, DSMath {
         view
         returns (uint256)
     {
+        // Desable linter for too long require statement
+        // solhint-disable-next-line
+        require(
+            makerOracle[_pair] != address(0x0),
+            "OracleAggregator.getMakerTokenPrice: CurrencyPairNotSupported."
+        );
         if (mockMode) {
             return mockValue;
         }
-        return uint256(IMakerPriceFeed(_makerOracle[_pair]).read());
+        return uint256(IMakerPriceFeed(makerOracle[_pair]).read());
     }
 }

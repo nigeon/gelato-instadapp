@@ -59,7 +59,7 @@ contract ConnectGelatoProviderPayment is ConnectGelatoProviderPaymentHelper {
         uint256 _amt,
         uint256 _getID,
         uint256 _setID
-    ) public {
+    ) public payable {
         // Desable linter for too long require statement
         // solhint-disable-next-line
         require(

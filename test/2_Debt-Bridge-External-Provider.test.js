@@ -21,12 +21,85 @@ const DssCdpManager = require("../pre-compiles/DssCdpManager.json");
 const GetCdps = require("../pre-compiles/GetCdps.json");
 const IERC20 = require("../pre-compiles/IERC20.json");
 const CTokenInterface = require("../pre-compiles/CTokenInterface.json");
+const GelatoGasPriceOracle = require("../pre-compiles/GelatoGasPriceOracle.json");
+const CompoundResolver = require("../pre-compiles/InstaCompoundResolver.json");
 
 const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const GAS_LIMIT = "4000000";
 const GAS_PRICE_CEIL = ethers.utils.parseUnits("1000", "gwei");
+const WAD = ethers.utils.parseUnits("1", 18);
 
 // #endregion
+
+//#region Mock Math Function
+
+let wdiv = (x, y) => {
+  return x.mul(WAD).add(y.div(2)).div(y);
+};
+
+let wmul = (x, y) => {
+  return x.mul(y).add(WAD.div(2)).div(WAD);
+};
+
+let wcollateralToWithdraw = (
+  wantedLiquidationRatioOnProtocol1,
+  wantedLiquidationRatioOnProtocol2,
+  collateral,
+  borrowedToken,
+  collateralPrice
+) => {
+  //#region CALCULATION REPLICATION
+
+  let expectedColToWithdraw = wmul(
+    wmul(wantedLiquidationRatioOnProtocol1, wantedLiquidationRatioOnProtocol2),
+    borrowedToken
+  ); // doc ref : c_r x comp_r x d_2
+  expectedColToWithdraw = expectedColToWithdraw.sub(
+    wmul(wantedLiquidationRatioOnProtocol1, collateral)
+  ); // doc ref : c_r x comp_r x d_2 - c_r x e_2
+  expectedColToWithdraw = wdiv(
+    expectedColToWithdraw,
+    wantedLiquidationRatioOnProtocol2.sub(wantedLiquidationRatioOnProtocol1)
+  ); // doc ref : (c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r)
+  expectedColToWithdraw = collateral.sub(expectedColToWithdraw); // doc ref : e_2 - ((c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r))
+
+  // Extra step to convert back to col type
+  expectedColToWithdraw = wdiv(expectedColToWithdraw, collateralPrice);
+
+  //#endregion
+  return expectedColToWithdraw;
+};
+
+let wborrowedTokenToPayback = (
+  wantedLiquidationRatioOnProtocol1,
+  wantedLiquidationRatioOnProtocol2,
+  collateral,
+  borrowedToken
+) => {
+  //#region CALCULATION REPLICATION
+
+  let expectedBorToPayBack = wmul(
+    wmul(wantedLiquidationRatioOnProtocol1, wantedLiquidationRatioOnProtocol2),
+    borrowedToken
+  ); // doc ref : c_r x comp_r x d_2
+  expectedBorToPayBack = expectedBorToPayBack.sub(
+    wmul(wantedLiquidationRatioOnProtocol1, collateral)
+  ); // doc ref : c_r x comp_r x d_2 - c_r x e_2
+  expectedBorToPayBack = wdiv(
+    expectedBorToPayBack,
+    wantedLiquidationRatioOnProtocol2.sub(wantedLiquidationRatioOnProtocol1)
+  ); // doc ref : (c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r)
+  expectedBorToPayBack = wmul(
+    wdiv(ethers.utils.parseUnits("1", 18), wantedLiquidationRatioOnProtocol1),
+    expectedBorToPayBack
+  ); // doc ref : (1/c_r)((c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r))
+  expectedBorToPayBack = borrowedToken.sub(expectedBorToPayBack); // doc ref : d_2 - (1/c_r)((c_r x comp_r x d_2 - c_r x e_2)/ (comp_r - c_r))
+
+  //#endregion
+  return expectedBorToPayBack;
+};
+
+//#endregion
 
 describe("Debt Bridge with External Provider", function () {
   this.timeout(0);
@@ -53,8 +126,11 @@ describe("Debt Bridge with External Provider", function () {
   let daiToken;
   let gelatoCore;
   let cDaiToken;
+  let cEthToken;
   let instaMaster;
   let instaConnectors;
+  let gelatoGasPriceOracle;
+  let compoundResolver;
 
   // Contracts to deploy and use for local testing
   let conditionMakerVaultIsSafe;
@@ -126,9 +202,21 @@ describe("Debt Bridge with External Provider", function () {
       CTokenInterface.abi,
       bre.network.config.CDAI
     );
+    cEthToken = await ethers.getContractAt(
+      CTokenInterface.abi,
+      bre.network.config.CETH
+    );
     instaConnectors = await ethers.getContractAt(
       InstaConnector.abi,
       bre.network.config.InstaConnectors
+    );
+    gelatoGasPriceOracle = await ethers.getContractAt(
+      GelatoGasPriceOracle.abi,
+      bre.network.config.GelatoGasPriceOracle
+    );
+    compoundResolver = await ethers.getContractAt(
+      CompoundResolver.abi,
+      bre.network.config.CompoundResolver
     );
     // instaEvent = await ethers.getContractAt(
     //     InstaEvent.abi,
@@ -449,7 +537,7 @@ describe("Debt Bridge with External Provider", function () {
     //#endregion
   });
 
-  it("Use Maker Compound refinancing if the maker vault become unsafe after a market move.", async function () {
+  it("#1: Use Maker Compound refinancing if the maker vault become unsafe after a market move.", async function () {
     // User Actions
     // Step 1 : User create a DeFi Smart Account
     // Step 2 : User open a Vault, put some ether on it and borrow some dai
@@ -566,6 +654,10 @@ describe("Debt Bridge with External Provider", function () {
     // It will be done through a algorithm that will optimize the
     // total borrow rate.
 
+    let wantedLiquidationRatioOnProtocol1 = ethers.utils.parseUnits("3", 18);
+    let wantedLiquidationRatioOnProtocol2 = ethers.utils.parseUnits("19", 17);
+    let currencyPair = "ETH/USD";
+
     const debtBridgeCondition = new GelatoCoreLib.Condition({
       inst: conditionMakerVaultIsSafe.address,
       data: await conditionMakerVaultIsSafe.getConditionData(
@@ -585,9 +677,9 @@ describe("Debt Bridge with External Provider", function () {
         functionname: "debtBridgeMakerToCompound",
         inputs: [
           cdpId,
-          ethers.utils.parseUnits("3", 18),
-          ethers.utils.parseUnits("18", 17),
-          "ETH/USD",
+          wantedLiquidationRatioOnProtocol1,
+          wantedLiquidationRatioOnProtocol2,
+          currencyPair,
           0,
           0,
         ],
@@ -748,7 +840,37 @@ describe("Debt Bridge with External Provider", function () {
     // will execute the user's task to make the user position safe
     // by a debt refinancing in compound.
 
+    //#region EXPECTED OUTCOME
+
+    let latestPrice = await oracleAggregator.getMakerTokenPrice(currencyPair);
+    let fees = ethers.utils
+      .parseUnits("2000000", 0)
+      .mul(await gelatoGasPriceOracle.latestAnswer());
+    let debt = await connectGelatoDebtBridge.getMakerVaultDebt(cdpId);
+    let collateral = wmul(
+      await connectGelatoDebtBridge.getMakerVaultCollateralBalance(cdpId),
+      latestPrice
+    ).sub(fees);
+
+    let expectedColWithdrawAmount = wcollateralToWithdraw(
+      wantedLiquidationRatioOnProtocol1,
+      wantedLiquidationRatioOnProtocol2,
+      collateral,
+      debt,
+      latestPrice
+    );
+
+    let expectedBorAmountToPayBack = wborrowedTokenToPayback(
+      wantedLiquidationRatioOnProtocol1,
+      wantedLiquidationRatioOnProtocol2,
+      collateral,
+      debt
+    );
+
+    //#endregion
+
     let providerBalanceBeforeExecution = await providerWallet.getBalance();
+
     await expect(
       connectedGelatoCore.exec(taskReceipt, {
         gasPrice: gelatoGasPrice, // Exectutor must use gelatoGasPrice (Chainlink fast gwei)
@@ -757,15 +879,47 @@ describe("Debt Bridge with External Provider", function () {
     ).to.emit(gelatoCore, "LogExecSuccess");
 
     let providerBalanceAfterExecution = await providerWallet.getBalance();
+
     expect(providerBalanceAfterExecution).to.be.gt(
       providerBalanceBeforeExecution
     );
-    const amtOfBorrowedDAIOnCompound = (
-      await cDaiToken.getAccountSnapshot(dsa.address)
-    )[2];
-    expect(amtOfBorrowedDAIOnCompound).to.be.lt(
-      ethers.utils.parseUnits("1000", 18)
-    ); // Check the borrow amount
+
+    // compound position of DSA on cDai and cEth
+    let compoundPosition = await compoundResolver.getCompoundData(dsa.address, [
+      cDaiToken.address,
+      cEthToken.address,
+    ]);
+
+    // https://compound.finance/docs/ctokens#exchange-rate
+    // calculate cEth/ETH rate to convert back cEth to ETH
+    // for comparing with the withdrew Ether to the deposited one.
+    let exchangeRateCethToEth = (await cEthToken.getCash())
+      .add(await cEthToken.totalBorrows())
+      .sub(await cEthToken.totalReserves())
+      .div(await cEthToken.totalSupply());
+
+    expect(
+      expectedBorAmountToPayBack.sub(
+        compoundPosition[0].borrowBalanceStoredUser
+      )
+    ).to.be.gt(ethers.utils.parseUnits("1", 0));
+    expect(
+      expectedColWithdrawAmount.sub(
+        compoundPosition[1].balanceOfUser.mul(exchangeRateCethToEth)
+      )
+    ).to.be.gt(ethers.utils.parseUnits("1", 0));
+    expect(
+      expectedBorAmountToPayBack.sub(
+        compoundPosition[0].borrowBalanceStoredUser
+      )
+    ).to.be.lt(ethers.utils.parseUnits("1", 16));
+    expect(
+      expectedColWithdrawAmount.sub(
+        compoundPosition[1].balanceOfUser.mul(exchangeRateCethToEth)
+      )
+    ).to.be.lt(ethers.utils.parseUnits("1", 14));
+
+    // DSA contain 1000 DAI
     expect(await daiToken.balanceOf(dsa.address)).to.be.equal(
       ethers.utils.parseUnits("1000", 18)
     );

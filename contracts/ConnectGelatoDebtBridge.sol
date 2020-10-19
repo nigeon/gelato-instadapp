@@ -293,7 +293,7 @@ contract ConnectGelatoDebtBridge is ConnectGelatoDebtBridgeResolver {
     // Constant name must be in capitalized SNAKE_CASE
     // solhint-disable-next-line
     string public constant override name = "GelatoDebtBridge-v1.0";
-    uint256 public constant GASLIMIT = 2000000; // To Define
+    uint256 public constant GASLIMIT = 1933090 + (19331 * 2); // 1933080 + ~2% (Estimated Value)
     address public immutable oracleAggregator;
 
     constructor(uint256 _iD, address _oracleAggregator) public {
@@ -315,7 +315,7 @@ contract ConnectGelatoDebtBridge is ConnectGelatoDebtBridgeResolver {
         string memory _pair,
         uint256 _getID,
         uint256 _setID
-    ) external {
+    ) external payable {
         (
             uint256 paybackAmount,
             uint256 collateralToWithdraw,
