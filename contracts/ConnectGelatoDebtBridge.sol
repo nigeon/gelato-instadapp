@@ -356,19 +356,19 @@ contract ConnectGelatoDebtBridge is ConnectGelatoDebtBridgeResolver {
         fees = _mul(GASLIMIT, _getGasPrice());
 
         uint256 debt = getMakerVaultDebt(_vaultID);
-        uint256 collateral = _sub(
-            _wmul(getMakerVaultCollateralBalance(_vaultID), latestPrice),
-            fees
+        uint256 collateral = _wmul(
+            _sub(getMakerVaultCollateralBalance(_vaultID), fees),
+            latestPrice
         );
 
-        collateralToWithdraw = _wcollateralToWithdraw(
+        collateralToWithdraw = wcollateralToWithdraw(
             _vaultLiquidationRatio,
             _compPosLiquidationRatio,
             collateral,
             debt,
             latestPrice
         );
-        paybackAmount = _wborrowedTokenToPayback(
+        paybackAmount = wborrowedTokenToPayback(
             _vaultLiquidationRatio,
             _compPosLiquidationRatio,
             collateral,
@@ -452,13 +452,13 @@ contract ConnectGelatoDebtBridge is ConnectGelatoDebtBridgeResolver {
     /// @param _bor amount of borrowed token2 on protocol 1.
     /// @param _colPrice price of the collateral.
     /// @return collateral to withdraw in wad standard
-    function _wcollateralToWithdraw(
+    function wcollateralToWithdraw(
         uint256 _p1LiqRatio,
         uint256 _p2LiqRatio,
         uint256 _col,
         uint256 _bor,
         uint256 _colPrice
-    ) internal pure returns (uint256) {
+    ) public pure returns (uint256) {
         return
             _wdiv(
                 _sub(
@@ -482,12 +482,12 @@ contract ConnectGelatoDebtBridge is ConnectGelatoDebtBridgeResolver {
     /// @param _col token1 collateral to put on protocol 1.
     /// @param _bor amount of borrowed token2 on protocol 1.
     /// @return amount of borrowed token to pay back in wad standard
-    function _wborrowedTokenToPayback(
+    function wborrowedTokenToPayback(
         uint256 _p1LiqRatio,
         uint256 _p2LiqRatio,
         uint256 _col,
         uint256 _bor
-    ) internal pure returns (uint256) {
+    ) public pure returns (uint256) {
         return
             _sub(
                 _bor,

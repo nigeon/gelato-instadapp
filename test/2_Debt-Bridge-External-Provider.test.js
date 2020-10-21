@@ -604,13 +604,15 @@ describe("Debt Bridge with External Provider", function () {
       }
     );
 
+    let makerVaultInitialBorrow = ethers.utils.parseUnits("1000", 18);
+
     await dsa.cast(
       [bre.network.config.ConnectMaker],
       [
         await bre.run("abi-encode-withselector", {
           abi: ConnectMaker.abi,
           functionname: "borrow",
-          inputs: [cdpId, ethers.utils.parseUnits("1000", 18), 0, 0],
+          inputs: [cdpId, makerVaultInitialBorrow, 0, 0],
         }),
       ],
       userAddress
@@ -844,13 +846,15 @@ describe("Debt Bridge with External Provider", function () {
 
     let latestPrice = await oracleAggregator.getMakerTokenPrice(currencyPair);
     let fees = ethers.utils
-      .parseUnits("2000000", 0)
+      .parseUnits(String(1933090 + 19331 * 2), 0)
       .mul(await gelatoGasPriceOracle.latestAnswer());
     let debt = await connectGelatoDebtBridge.getMakerVaultDebt(cdpId);
     let collateral = wmul(
-      await connectGelatoDebtBridge.getMakerVaultCollateralBalance(cdpId),
+      (await connectGelatoDebtBridge.getMakerVaultCollateralBalance(cdpId)).sub(
+        fees
+      ),
       latestPrice
-    ).sub(fees);
+    );
 
     let expectedColWithdrawAmount = wcollateralToWithdraw(
       wantedLiquidationRatioOnProtocol1,
@@ -866,6 +870,8 @@ describe("Debt Bridge with External Provider", function () {
       collateral,
       debt
     );
+
+    //console.log(String(wdiv(collateral.sub(wmul(expectedColWithdrawAmount, latestPrice).add(fees)),debt.sub(expectedBorAmountToPayBack))));
 
     //#endregion
 
@@ -898,30 +904,61 @@ describe("Debt Bridge with External Provider", function () {
       .sub(await cEthToken.totalReserves())
       .div(await cEthToken.totalSupply());
 
-    expect(
-      expectedBorAmountToPayBack.sub(
-        compoundPosition[0].borrowBalanceStoredUser
-      )
-    ).to.be.gt(ethers.utils.parseUnits("1", 0));
-    expect(
-      expectedColWithdrawAmount.sub(
-        compoundPosition[1].balanceOfUser.mul(exchangeRateCethToEth)
-      )
-    ).to.be.gt(ethers.utils.parseUnits("1", 0));
-    expect(
-      expectedBorAmountToPayBack.sub(
-        compoundPosition[0].borrowBalanceStoredUser
-      )
-    ).to.be.lt(ethers.utils.parseUnits("1", 16));
+    // Estimated amount to borrowed token should be equal to the actual one read on compound contracts
+    expect(expectedBorAmountToPayBack).to.be.equal(
+      compoundPosition[0].borrowBalanceStoredUser
+    );
+
+    // Estimated amount of collateral should be equal to the actual one read on compound contracts
     expect(
       expectedColWithdrawAmount.sub(
         compoundPosition[1].balanceOfUser.mul(exchangeRateCethToEth)
       )
-    ).to.be.lt(ethers.utils.parseUnits("1", 14));
+    ).to.be.lt(ethers.utils.parseUnits("1", 12));
+
+    debt = await connectGelatoDebtBridge.getMakerVaultDebt(cdpId);
+    collateral = await connectGelatoDebtBridge.getMakerVaultCollateralBalance(
+      cdpId
+    ); // in Ether.
+
+    // Total Borrowed Amount on both protocol should equal to the initial borrowed amount on maker vault.
+    expect(
+      debt
+        .add(compoundPosition[0].borrowBalanceStoredUser)
+        .sub(makerVaultInitialBorrow)
+    ).to.be.lte(ethers.utils.parseUnits("1", 0));
+    // Total Ether col on Maker and Compound (+ fees) should equal to the initial col on maker vault
+    expect(
+      compoundPosition[1].balanceOfUser
+        .mul(exchangeRateCethToEth)
+        .add(fees)
+        .add(collateral)
+        .sub(ethers.utils.parseEther("10"))
+    ).to.be.lt(ethers.utils.parseUnits("1", 12));
+
+    // Check Collaterization Ratio of Maker and Compound
+    expect(
+      wdiv(
+        wmul(
+          compoundPosition[1].balanceOfUser.mul(exchangeRateCethToEth),
+          latestPrice
+        ),
+        compoundPosition[0].borrowBalanceStoredUser
+      ).sub(wantedLiquidationRatioOnProtocol2)
+    ).to.be.lt(ethers.utils.parseUnits("1", 12));
+    expect(
+      wdiv(
+        wmul(
+          collateral,
+          await oracleAggregator.getMakerTokenPrice(currencyPair)
+        ),
+        debt
+      ).sub(wantedLiquidationRatioOnProtocol1)
+    ).to.be.lt(ethers.utils.parseUnits("1", 1));
 
     // DSA contain 1000 DAI
     expect(await daiToken.balanceOf(dsa.address)).to.be.equal(
-      ethers.utils.parseUnits("1000", 18)
+      makerVaultInitialBorrow
     );
 
     //#endregion

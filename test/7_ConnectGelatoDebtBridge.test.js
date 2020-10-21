@@ -26,7 +26,7 @@ describe("Gelato Debt Bridge Connector unit test", function () {
   let connectGelatoDebtBridge;
   before(async function () {
     const ConnectGelatoDebtBridge = await ethers.getContractFactory(
-      "ConnectGelatoDebtBridgeMock"
+      "ConnectGelatoDebtBridge"
     );
     connectGelatoDebtBridge = await ConnectGelatoDebtBridge.deploy(
       0,
