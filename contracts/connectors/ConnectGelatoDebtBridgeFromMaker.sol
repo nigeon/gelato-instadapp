@@ -270,6 +270,13 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
         __id = _id;
     }
 
+    /// @notice Get gas price from gelato Gas Price Oracle and multiply
+    /// this gas price by the estimated amount of needed for executing
+    /// the transaction
+    function _getFees() internal view returns (uint256 gasCost) {
+        gasCost = _mul(GAS_LIMIT, _getGasPrice());
+    }
+
     /// @notice Saves Data to InstaMemory that can be used for DebtBridge Maker->Compound
     /// @dev Use wad for colRatios. The user has no influence over setUint or getUint.
     /// @param _vaultId The id of the makerDAO vault.
@@ -307,6 +314,27 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
         setUint(603, wCollateralToMove); // deposit compound
         setUint(604, wDaiDebtToMove); // borrow compound
         setUint(605, gasFeesPaidFromCol); // pay the Gelato Provider (TO DO: unsafe)
+    }
+
+    /// @notice Save in instaMemory the needed values for doing full refinancing between makerDAO and Compound.
+    /// @param _vaultID The ID of the makerDAO vault.
+    // @param _getID Id for writting in instaMemory.
+    // @param _setID Id for loading from instaMemory.
+    function saveFullRefinanceFromMakerDataToMemory(
+        uint256 _vaultID,
+        uint256, /*_getId,*/
+        uint256 /*_setId*/
+    ) external payable {
+        uint256 fees = _getFees(); // get Fees
+        uint256 paybackAmount = getMakerVaultDebt(_vaultID);
+        uint256 collateralToWithdraw = getMakerVaultCollateralBalance(_vaultID);
+
+        setUint(600, paybackAmount);
+        setUint(601, paybackAmount); // payback maker
+        setUint(602, collateralToWithdraw); // withdraw maker
+        setUint(603, _sub(collateralToWithdraw, fees)); // deposit compound
+        setUint(604, paybackAmount); // borrow compound
+        setUint(605, fees); // pay the provider
     }
 
     /// @notice Computes values needed for DebtBridge Maker->ProtocolB
@@ -357,7 +385,7 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
 
         // TO DO: add fee mechanism for non-ETH collateral debt bridge
         // uint256 gasFeesPaidFromCol = _mul(GAS_LIMIT, wmul(_getGasPrice(), latestPrice));
-        gasFeesPaidFromCol = _mul(GAS_LIMIT, _getGasPrice());
+        gasFeesPaidFromCol = _getFees();
 
         uint256 wPricedCol = wmul(
             _sub(getMakerVaultCollateralBalance(_vaultId), gasFeesPaidFromCol),

@@ -4,13 +4,13 @@ const {ethers} = hre;
 
 // #region Contracts ABI
 
-const ConnectMaker = require("../pre-compiles/ConnectMaker.json");
-const GetCdps = require("../pre-compiles/GetCdps.json");
-const DssCdpManager = require("../pre-compiles/DssCdpManager.json");
-const InstaList = require("../pre-compiles/InstaList.json");
-const InstaAccount = require("../pre-compiles/InstaAccount.json");
-const InstaIndex = require("../pre-compiles/InstaIndex.json");
-const IERC20 = require("../pre-compiles/IERC20.json");
+const ConnectMaker = require("../../pre-compiles/ConnectMaker.json");
+const GetCdps = require("../../pre-compiles/GetCdps.json");
+const DssCdpManager = require("../../pre-compiles/DssCdpManager.json");
+const InstaList = require("../../pre-compiles/InstaList.json");
+const InstaAccount = require("../../pre-compiles/InstaAccount.json");
+const InstaIndex = require("../../pre-compiles/InstaIndex.json");
+const IERC20 = require("../../pre-compiles/IERC20.json");
 
 const ORACLE_MAKER_ETH_USD = "ETH/USD-Maker-v1";
 const ORACLE_MAKER_ETH_USD_ADDR = "0x729D19f657BD0614b4985Cf1D82531c67569197B";

@@ -5,11 +5,11 @@ const GelatoCoreLib = require("@gelatonetwork/core");
 
 // #region Contracts ABI
 
-const ConnectAuth = require("../pre-compiles/ConnectAuth.json");
-const InstaList = require("../pre-compiles/InstaList.json");
-const InstaAccount = require("../pre-compiles/InstaAccount.json");
-const InstaIndex = require("../pre-compiles/InstaIndex.json");
-const InstaConnectors = require("../pre-compiles/InstaConnectors.json");
+const ConnectAuth = require("../../pre-compiles/ConnectAuth.json");
+const InstaList = require("../../pre-compiles/InstaList.json");
+const InstaAccount = require("../../pre-compiles/InstaAccount.json");
+const InstaIndex = require("../../pre-compiles/InstaIndex.json");
+const InstaConnectors = require("../../pre-compiles/InstaConnectors.json");
 
 const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 

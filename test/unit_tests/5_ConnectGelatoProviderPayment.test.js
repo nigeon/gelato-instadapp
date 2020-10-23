@@ -4,15 +4,15 @@ const {ethers} = hre;
 
 // #region Contracts ABI
 
-const ConnectMaker = require("../pre-compiles/ConnectMaker.json");
-const GetCdps = require("../pre-compiles/GetCdps.json");
-const DssCdpManager = require("../pre-compiles/DssCdpManager.json");
-const ConnectBasic = require("../pre-compiles/ConnectBasic.json");
-const InstaList = require("../pre-compiles/InstaList.json");
-const InstaAccount = require("../pre-compiles/InstaAccount.json");
-const InstaIndex = require("../pre-compiles/InstaIndex.json");
-const IERC20 = require("../pre-compiles/IERC20.json");
-const InstaConnector = require("../pre-compiles/InstaConnectors.json");
+const ConnectMaker = require("../../pre-compiles/ConnectMaker.json");
+const GetCdps = require("../../pre-compiles/GetCdps.json");
+const DssCdpManager = require("../../pre-compiles/DssCdpManager.json");
+const ConnectBasic = require("../../pre-compiles/ConnectBasic.json");
+const InstaList = require("../../pre-compiles/InstaList.json");
+const InstaAccount = require("../../pre-compiles/InstaAccount.json");
+const InstaIndex = require("../../pre-compiles/InstaIndex.json");
+const IERC20 = require("../../pre-compiles/IERC20.json");
+const InstaConnector = require("../../pre-compiles/InstaConnectors.json");
 
 // #endregion
 
