@@ -6,7 +6,9 @@ const GelatoCoreLib = require("@gelatonetwork/core");
 const Helper = require("./helpers/Full-Refinance-External-Provider.helper");
 const helper = new Helper();
 
-describe("Debt Bridge with External Provider", function () {
+// This test showcases how to submit a task refinancing a Users debt position from
+// Maker to Compound using Gelato
+describe("Full Debt Bridge refinancing loan from Maker to Compound", function () {
   this.timeout(0);
   if (hre.network.name !== "hardhat") {
     console.error("Test Suite is meant to be run on hardhat only");
@@ -64,7 +66,7 @@ describe("Debt Bridge with External Provider", function () {
     //#endregion
   });
 
-  it("#2 : User submit Debt refinancing task if market move", async function () {
+  it("#2: User submits Debt refinancing task if market move to Gelato via DSA", async function () {
     //#region User submit a Debt Refinancing task if market move against him
 
     // User submit the refinancing task if market move against him.
@@ -95,8 +97,8 @@ describe("Debt Bridge with External Provider", function () {
     });
 
     const gelatoExternalProvider = new GelatoCoreLib.GelatoProvider({
-      addr: address.providerAddress,
-      module: contracts.dsaProviderModule.address,
+      addr: address.providerAddress, // Gelato Provider Address
+      module: contracts.dsaProviderModule.address, // Gelato DSA module
     });
 
     const expiryDate = 0;
@@ -133,6 +135,10 @@ describe("Debt Bridge with External Provider", function () {
     //#endregion
   });
 
+  // This test showcases the part which is automatically done by the Gelato Executor Network on mainnet
+  // Bots constatly check whether the submitted task is executable (by calling canExec)
+  // If the task becomes executable (returns "OK"), the "exec" function will be called
+  // which will execute the debt refinancing on behalf of the user
   it("#2: Use Maker Compound refinancing if the maker vault become unsafe after a market move.", async function () {
     // Steps
     // Step 1: Market Move against the user (Mock)

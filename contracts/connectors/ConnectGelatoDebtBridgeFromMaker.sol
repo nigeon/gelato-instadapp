@@ -308,12 +308,14 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
             _priceOracle,
             _oraclePayload
         );
-        setUint(600, wDaiDebtToMove); // flashloan borrow
-        setUint(601, wDaiDebtToMove); // payback maker
-        setUint(602, _add(wCollateralToMove, gasFeesPaidFromCol)); // withdraw maker
-        setUint(603, wCollateralToMove); // deposit compound
-        setUint(604, wDaiDebtToMove); // borrow compound
-        setUint(605, gasFeesPaidFromCol); // pay the Gelato Provider (TO DO: unsafe)
+
+        _setInstaMemoryUints(
+            wDaiDebtToMove,
+            _add(wCollateralToMove, gasFeesPaidFromCol),
+            wCollateralToMove,
+            wDaiDebtToMove,
+            gasFeesPaidFromCol
+        );
     }
 
     /// @notice Save in instaMemory the needed values for doing full refinancing between makerDAO and Compound.
@@ -329,12 +331,34 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
         uint256 paybackAmount = getMakerVaultDebt(_vaultID);
         uint256 collateralToWithdraw = getMakerVaultCollateralBalance(_vaultID);
 
-        setUint(600, paybackAmount);
-        setUint(601, paybackAmount); // payback maker
-        setUint(602, collateralToWithdraw); // withdraw maker
-        setUint(603, _sub(collateralToWithdraw, fees)); // deposit compound
-        setUint(604, paybackAmount); // borrow compound
-        setUint(605, fees); // pay the provider
+        _setInstaMemoryUints(
+            paybackAmount,
+            collateralToWithdraw,
+            _sub(collateralToWithdraw, fees),
+            paybackAmount,
+            fees
+        );
+    }
+
+    /// @notice Internal function to store values in InstaMemory
+    /// @param _makerDebtRepaymentAmount payback maker && flashloan borrow amount
+    /// @param _makerCollaToWithdraw withdraw maker
+    /// @param _compoundDepositAmount deposit compound
+    /// @param _compoundDebtAmount borrow compound
+    /// @param _fees pay the Gelato Provider (TO DO: unsafe)
+    function _setInstaMemoryUints(
+        uint256 _makerDebtRepaymentAmount,
+        uint256 _makerCollaToWithdraw,
+        uint256 _compoundDepositAmount,
+        uint256 _compoundDebtAmount,
+        uint256 _fees
+    ) internal {
+        setUint(600, _makerDebtRepaymentAmount); // borrow flashloan
+        setUint(601, _makerDebtRepaymentAmount); // payback maker
+        setUint(602, _makerCollaToWithdraw); // withdraw maker
+        setUint(603, _compoundDepositAmount); // deposit compound
+        setUint(604, _compoundDebtAmount); // borrow compound
+        setUint(605, _fees); // pay the provider
     }
 
     /// @notice Computes values needed for DebtBridge Maker->ProtocolB
