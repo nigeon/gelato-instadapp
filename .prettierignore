@@ -1,5 +1,5 @@
-# Ignore artifacts:
-#artifacts
+# Ignore:
+artifacts
 cache
 assets
 coverage

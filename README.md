@@ -24,6 +24,21 @@ Furtheremore the following contracts were added to showcase the automation of th
 
 To see for yourself check out the [contracts](./contracts) folder and make sure to check out `test/mv-DAI-DSR-Compound.test.js`, to see an end-to-end test showcasing the prototype. To do so follow the steps below:
 
+#### Debt Bridge
+
+Debt Bridge is a finance process that aim to make the user position safer. InstaDapp DSA could use Gelato to automate this process.
+
+**Full Refinancing from Maker's Vault to Compound.**
+Based on the [debt bridge](https://docs.instadapp.io/usecases/debt-bridge/) documentation of Instadapp, we automated this process by adding two connectors `ConnectGelatoDebtBridge`, `ConnectGelatoProviderPayment` and a Gelato condition contract.
+
+- `ConditionMakerVaultIsSafe.sol`: determine if a specific vault is on an unsafe position.
+
+- `ConnectGelatoDebtBridge.sol`: use Instamemory to assign values to the differents inputs needed by `ConnectMaker` and `ConnectCompound` like the amount of DAI to pay back, the amount of Ether to withdraw from Maker etc...
+
+- `ConnectGelatoProviderPayment.sol`: will pay the Gelato provider (the Ethereum account paying the transaction).
+
+For understanding the entire process of a full refinancing, from the opening of the vault on maker to the execution of the refinancing on InstaDapp, take a look at `test/2_Full-Refinance-External-Provider.test.js` test.
+
 1. Clone this repo
 2. Put your Alchemy ID in .env
 3. yarn install
