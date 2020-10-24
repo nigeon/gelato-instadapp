@@ -503,7 +503,7 @@ class Helper {
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectMaker.abi,
         functionname: "payback",
-        inputs: [vaultId, 0, "601", 0],
+        inputs: [vaultId, ethers.constants.MaxUint256, 0, 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
@@ -515,7 +515,7 @@ class Helper {
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectMaker.abi,
         functionname: "withdraw",
-        inputs: [vaultId, 0, "602", 0],
+        inputs: [vaultId, ethers.constants.MaxUint256, 0, 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });

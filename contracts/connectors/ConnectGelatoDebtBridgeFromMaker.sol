@@ -306,9 +306,9 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
         );
 
         _setInstaMemoryUints(
-            wDaiDebtToMove,
-            wColToWithdrawFromMaker,
+            _add(wDaiDebtToMove, 1e18),
             _sub(wColToWithdrawFromMaker, gasFeesPaidFromCol), // _wColToDepositInB
+            wDaiDebtToMove,
             gasFeesPaidFromCol
         );
     }
@@ -330,10 +330,12 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
 
         _setInstaMemoryUints(
             wDaiDebtToMove,
-            wColToWithdrawFromMaker,
             _sub(wColToWithdrawFromMaker, gasFeesPaidFromCol), // _wColToDepositInB
+            wDaiDebtToMove,
             gasFeesPaidFromCol
         );
+        setUint(601, wDaiDebtToMove); // payback maker
+        setUint(602, wColToWithdrawFromMaker); // withdraw maker
     }
 
     /// @notice Computes values needed for DebtBridge Maker->ProtocolB
@@ -477,14 +479,12 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
 
     // _gasFeesPaidFromCol == _wColToWithdrawFromMaker - _wColToDepositInB
     function _setInstaMemoryUints(
-        uint256 _wDaiDebtToMove,
-        uint256 _wColToWithdrawFromMaker,
+        uint256 _wDaiToBorrToInstaPool,
         uint256 _wColToDepositInB,
+        uint256 _wDaiDebtToMove,
         uint256 _gasFeesPaidFromCol
     ) internal virtual {
-        setUint(600, _wDaiDebtToMove); // borrow flashloan
-        setUint(601, _wDaiDebtToMove); // payback maker
-        setUint(602, _wColToWithdrawFromMaker); // withdraw maker
+        setUint(600, _wDaiToBorrToInstaPool); // borrow flashloan
         setUint(603, _wColToDepositInB); // deposit compound
         setUint(604, _wDaiDebtToMove); // borrow compound
         setUint(605, _gasFeesPaidFromCol); // pay the provider
