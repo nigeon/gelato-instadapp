@@ -139,7 +139,7 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
   // Bots constatly check whether the submitted task is executable (by calling canExec)
   // If the task becomes executable (returns "OK"), the "exec" function will be called
   // which will execute the debt refinancing on behalf of the user
-  it("#2: Use Maker Compound refinancing if the maker vault become unsafe after a market move.", async function () {
+  it("#3: Use Maker Compound refinancing if the maker vault become unsafe after a market move.", async function () {
     // Steps
     // Step 1: Market Move against the user (Mock)
     // Step 2: Executor execute the user's task

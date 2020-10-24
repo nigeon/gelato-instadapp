@@ -217,7 +217,7 @@ abstract contract GelatoHelpers is Helpers {
         return 0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C;
     }
 
-    function _getGasPrice() internal view returns (uint256) {
+    function _getGelatoGasPrice() internal view returns (uint256) {
         return
             uint256(
                 GelatoGasPriceOracle(_getGelatoGasPriceOracle()).latestAnswer()
@@ -259,22 +259,18 @@ abstract contract MakerResolver is GelatoHelpers {
     }
 }
 
+/// @title ConnectGelatoDebtBridgeFromMaker
+/// @notice InstaDapp connector for full or partial refinancing of Maker debt positions.
+/// @author Gelato Team
 contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
     using GelatoBytes for bytes;
 
     // solhint-disable-next-line const-name-snakecase
     string public constant override name = "GelatoDebtBridge-v1.0";
-    uint256 public constant GAS_LIMIT = 1933090 + (19331 * 2); // 1933080 + ~2% (Estimated Value)
+    uint256 public constant GAS_COST = 1933090 + (19331 * 2); // 1933080 + ~2% (Estimated Value)
 
     constructor(uint256 _id) {
         __id = _id;
-    }
-
-    /// @notice Get gas price from gelato Gas Price Oracle and multiply
-    /// this gas price by the estimated amount of needed for executing
-    /// the transaction
-    function _getFees() internal view returns (uint256 gasCost) {
-        gasCost = _mul(GAS_LIMIT, _getGasPrice());
     }
 
     /// @notice Saves Data to InstaMemory that can be used for DebtBridge Maker->Compound
@@ -288,7 +284,7 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
     ///  method e.g. the function selector of MakerOracle's read function.
     // @param _getId Id for writting in instaMemory.
     // @param _setId Id for loading from instaMemory.
-    function saveDebtBridgeDataToMemory(
+    function savePartialRefinanceDataToMemory(
         uint256 _vaultId,
         uint256 _wMinColRatioMaker, // should be in ray because maker use ray standard
         uint256 _wMinColRatioB, // should be in wad because compound use wad standard
@@ -296,10 +292,10 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
         bytes calldata _oraclePayload,
         uint256, /*_getId,*/
         uint256 /*_setId*/
-    ) public virtual {
+    ) public payable virtual {
         (
             uint256 wDaiDebtToMove,
-            uint256 wCollateralToMove,
+            uint256 wColToWithdrawFromMaker,
             uint256 gasFeesPaidFromCol
         ) = computeDebtBridge(
             _vaultId,
@@ -311,54 +307,33 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
 
         _setInstaMemoryUints(
             wDaiDebtToMove,
-            _add(wCollateralToMove, gasFeesPaidFromCol),
-            wCollateralToMove,
-            wDaiDebtToMove,
+            wColToWithdrawFromMaker,
+            _sub(wColToWithdrawFromMaker, gasFeesPaidFromCol), // _wColToDepositInB
             gasFeesPaidFromCol
         );
     }
 
-    /// @notice Save in instaMemory the needed values for doing full refinancing between makerDAO and Compound.
+    /// @notice Stores payload for full refinancing from a Maker position in InstaMemory.
     /// @param _vaultID The ID of the makerDAO vault.
     // @param _getID Id for writting in instaMemory.
     // @param _setID Id for loading from instaMemory.
-    function saveFullRefinanceFromMakerDataToMemory(
+    function saveFullRefinanceDataToMemory(
         uint256 _vaultID,
         uint256, /*_getId,*/
         uint256 /*_setId*/
-    ) external payable {
-        uint256 fees = _getFees(); // get Fees
-        uint256 paybackAmount = getMakerVaultDebt(_vaultID);
-        uint256 collateralToWithdraw = getMakerVaultCollateralBalance(_vaultID);
+    ) public payable virtual {
+        uint256 wDaiDebtToMove = getMakerVaultDebt(_vaultID);
+        uint256 wColToWithdrawFromMaker = getMakerVaultCollateralBalance(
+            _vaultID
+        );
+        uint256 gasFeesPaidFromCol = _getGelatoProviderFees();
 
         _setInstaMemoryUints(
-            paybackAmount,
-            collateralToWithdraw,
-            _sub(collateralToWithdraw, fees),
-            paybackAmount,
-            fees
+            wDaiDebtToMove,
+            wColToWithdrawFromMaker,
+            _sub(wColToWithdrawFromMaker, gasFeesPaidFromCol), // _wColToDepositInB
+            gasFeesPaidFromCol
         );
-    }
-
-    /// @notice Internal function to store values in InstaMemory
-    /// @param _makerDebtRepaymentAmount payback maker && flashloan borrow amount
-    /// @param _makerCollaToWithdraw withdraw maker
-    /// @param _compoundDepositAmount deposit compound
-    /// @param _compoundDebtAmount borrow compound
-    /// @param _fees pay the Gelato Provider (TO DO: unsafe)
-    function _setInstaMemoryUints(
-        uint256 _makerDebtRepaymentAmount,
-        uint256 _makerCollaToWithdraw,
-        uint256 _compoundDepositAmount,
-        uint256 _compoundDebtAmount,
-        uint256 _fees
-    ) internal {
-        setUint(600, _makerDebtRepaymentAmount); // borrow flashloan
-        setUint(601, _makerDebtRepaymentAmount); // payback maker
-        setUint(602, _makerCollaToWithdraw); // withdraw maker
-        setUint(603, _compoundDepositAmount); // deposit compound
-        setUint(604, _compoundDebtAmount); // borrow compound
-        setUint(605, _fees); // pay the provider
     }
 
     /// @notice Computes values needed for DebtBridge Maker->ProtocolB
@@ -371,7 +346,7 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
     /// @param _oraclePayload The data for making the staticcall to the oracle's read
     ///  method e.g. the function selector of MakerOracle's read function.
     /// @return wDaiDebtToMove DAI Debt (wad) to: flashBorrow->repay Maker->withdraw from B->flashPayback.
-    /// @return wCollateralToMove (wad) to: withdraw from Maker and deposit on B.
+    /// @return wColToWithdrawFromMaker (wad) to: withdraw from Maker and deposit on B.
     /// @return gasFeesPaidFromCol Gelato automation-gas-fees paid from user's collateral
     // solhint-disable function-max-lines
     function computeDebtBridge(
@@ -386,7 +361,7 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
         virtual
         returns (
             uint256 wDaiDebtToMove,
-            uint256 wCollateralToMove,
+            uint256 wColToWithdrawFromMaker,
             uint256 gasFeesPaidFromCol
         )
     {
@@ -408,8 +383,8 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
         }
 
         // TO DO: add fee mechanism for non-ETH collateral debt bridge
-        // uint256 gasFeesPaidFromCol = _mul(GAS_LIMIT, wmul(_getGasPrice(), latestPrice));
-        gasFeesPaidFromCol = _getFees();
+        // uint256 gasFeesPaidFromCol = _mul(GAS_COST, wmul(_getGelatoGasPrice(), latestPrice));
+        gasFeesPaidFromCol = _getGelatoProviderFees();
 
         uint256 wPricedCol = wmul(
             _sub(getMakerVaultCollateralBalance(_vaultId), gasFeesPaidFromCol),
@@ -418,7 +393,7 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
 
         uint256 wDaiDebtOnMaker = getMakerVaultDebt(_vaultId);
 
-        wCollateralToMove = wCalcCollateralToWithdraw(
+        wColToWithdrawFromMaker = wCalcCollateralToWithdraw(
             _wMinColRatioMaker,
             _wMinColRatioB,
             wColPrice,
@@ -498,5 +473,29 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
                     )
                 )
             );
+    }
+
+    // _gasFeesPaidFromCol == _wColToWithdrawFromMaker - _wColToDepositInB
+    function _setInstaMemoryUints(
+        uint256 _wDaiDebtToMove,
+        uint256 _wColToWithdrawFromMaker,
+        uint256 _wColToDepositInB,
+        uint256 _gasFeesPaidFromCol
+    ) internal virtual {
+        setUint(600, _wDaiDebtToMove); // borrow flashloan
+        setUint(601, _wDaiDebtToMove); // payback maker
+        setUint(602, _wColToWithdrawFromMaker); // withdraw maker
+        setUint(603, _wColToDepositInB); // deposit compound
+        setUint(604, _wDaiDebtToMove); // borrow compound
+        setUint(605, _gasFeesPaidFromCol); // pay the provider
+    }
+
+    function _getGelatoProviderFees()
+        internal
+        view
+        virtual
+        returns (uint256 gasCost)
+    {
+        gasCost = _mul(GAS_COST, _getGelatoGasPrice());
     }
 }

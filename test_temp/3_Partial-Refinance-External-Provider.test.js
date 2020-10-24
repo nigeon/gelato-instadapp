@@ -541,7 +541,7 @@ describe("Debt Bridge with External Provider", function () {
       addr: connectGelatoDebtBridgeFromMaker.address,
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectGelatoDebtBridgeFromMakerABI,
-        functionname: "saveDebtBridgeDataToMemory",
+        functionname: "savePartialRefinanceDataToMemory",
         inputs: [
           vaultId,
           MIN_COL_RATIO_MAKER,

@@ -478,7 +478,7 @@ class Helper {
       addr: contracts.connectGelatoDebtBridgeFromMaker.address,
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectGelatoDebtBridgeFromMakerABI,
-        functionname: "saveFullRefinanceFromMakerDataToMemory",
+        functionname: "saveFullRefinanceDataToMemory",
         inputs: [vaultId, 0, 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
