@@ -306,7 +306,7 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
         );
 
         _setInstaMemoryUints(
-            _add(wDaiDebtToMove, 1e18),
+            wDaiDebtToMove,
             _sub(wColToWithdrawFromMaker, gasFeesPaidFromCol), // _wColToDepositInB
             wDaiDebtToMove,
             gasFeesPaidFromCol
@@ -333,7 +333,7 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
         uint256 gasFeesPaidFromCol = _getGelatoProviderFees();
 
         _setInstaMemoryUints(
-            wDaiDebtToMove,
+            _add(wDaiDebtToMove, 1e18),
             _sub(wColToWithdrawFromMaker, gasFeesPaidFromCol), // _wColToDepositInB
             wDaiDebtToMove,
             gasFeesPaidFromCol
