@@ -311,6 +311,10 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
             wDaiDebtToMove,
             gasFeesPaidFromCol
         );
+
+        // For partial refinance we need to store exact values (no uint(-1) functionality)
+        setUint(601, wDaiDebtToMove); // payback maker
+        setUint(602, wColToWithdrawFromMaker); // withdraw maker
     }
 
     /// @notice Stores payload for full refinancing from a Maker position in InstaMemory.
@@ -334,8 +338,6 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
             wDaiDebtToMove,
             gasFeesPaidFromCol
         );
-        setUint(601, wDaiDebtToMove); // payback maker
-        setUint(602, wColToWithdrawFromMaker); // withdraw maker
     }
 
     /// @notice Computes values needed for DebtBridge Maker->ProtocolB
@@ -479,12 +481,15 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
 
     // _gasFeesPaidFromCol == _wColToWithdrawFromMaker - _wColToDepositInB
     function _setInstaMemoryUints(
-        uint256 _wDaiToBorrToInstaPool,
+        uint256 _wDaiToBorrowFromInstaPool,
         uint256 _wColToDepositInB,
         uint256 _wDaiDebtToMove,
         uint256 _gasFeesPaidFromCol
     ) internal virtual {
-        setUint(600, _wDaiToBorrToInstaPool); // borrow flashloan
+        setUint(600, _wDaiToBorrowFromInstaPool); // borrow flashloan
+        // For full refinance we do NOT need to store exact values: uint(-1) functionality
+        // setUint(601, wDaiDebtToMove); // for partialRefinancing: payback maker
+        // setUint(602, wColToWithdrawFromMaker); // for partialRefinancing: withdraw maker
         setUint(603, _wColToDepositInB); // deposit compound
         setUint(604, _wDaiDebtToMove); // borrow compound
         setUint(605, _gasFeesPaidFromCol); // pay the provider
