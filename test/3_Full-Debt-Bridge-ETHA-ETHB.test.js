@@ -1,6 +1,6 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {ethers} = hre;
+const {ethers, network} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
 const Helper = require("./helpers/Full-Refinance-External-Provider.helper");
@@ -8,7 +8,7 @@ const helper = new Helper();
 
 // This test showcases how to submit a task refinancing a Users debt position from
 // Maker to Compound using Gelato
-describe("Full Debt Bridge refinancing loan from Maker to Compound", function () {
+describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
   this.timeout(0);
   if (hre.network.name !== "hardhat") {
     console.error("Test Suite is meant to be run on hardhat only");
@@ -21,7 +21,7 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
   let ABI;
 
   // Payload Params for ConnectGelatoDebtBridgeFromMaker and ConditionMakerVaultUnsafe
-  let vaultId;
+  let vaultAId;
 
   // For TaskSpec and for Task
   let spells = [];
@@ -30,11 +30,13 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
   let taskReceipt;
 
   before(async function () {
-    const result = await helper.makerToCompoundTestSetup();
+    // Reset back to a fresh forked state during runtime
+    await hre.run("hardhatReset", {provider: network.provider});
+    const result = await helper.makerETHAToMakerETHBSetup();
 
     address = result.address;
     contracts = result.contracts;
-    vaultId = result.vaultId;
+    vaultAId = result.vaultAId;
     spells = result.spells;
 
     ABI = await helper.getABI();
@@ -79,7 +81,7 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
     const conditionMakerVaultUnsafeObj = new GelatoCoreLib.Condition({
       inst: contracts.conditionMakerVaultUnsafe.address,
       data: await contracts.conditionMakerVaultUnsafe.getConditionData(
-        vaultId,
+        vaultAId,
         contracts.priceOracleResolver.address,
         await hre.run("abi-encode-withselector", {
           abi: ABI.PriceOracleResolverABI,
@@ -139,7 +141,7 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
   // Bots constatly check whether the submitted task is executable (by calling canExec)
   // If the task becomes executable (returns "OK"), the "exec" function will be called
   // which will execute the debt refinancing on behalf of the user
-  it("#3: Use Maker Compound refinancing if the maker vault become unsafe after a market move.", async function () {
+  it("#3: Use ETH-A to ETH-B refinancing if the maker vault become unsafe after a market move.", async function () {
     // Steps
     // Step 1: Market Move against the user (Mock)
     // Step 2: Executor execute the user's task
@@ -187,11 +189,11 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
       .parseUnits(String(1933090 + 19331 * 2), 0)
       .mul(gelatoGasPrice);
     const debtOnMakerBefore = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
-      vaultId
+      vaultAId
     );
     const pricedCollateral = (
       await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
-        vaultId
+        vaultAId
       )
     ).sub(gasFeesPaidFromCol);
 
@@ -206,7 +208,7 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
     ).to.emit(contracts.gelatoCore, "LogExecSuccess");
 
     // 🚧 For Debugging:
-    // const txResponse2 = await gelatoCore
+    // const txResponse2 = await contracts.gelatoCore
     //   .connect(address.executorWallet)
     //   .exec(taskReceipt, {
     //     gasPrice: gelatoGasPrice,
@@ -220,46 +222,42 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
     // }
     // await GelatoCoreLib.sleep(10000);
 
+    const cdps = await contracts.getCdps.getCdpsAsc(
+      contracts.dssCdpManager.address,
+      contracts.dsa.address
+    );
+    let vaultBId = String(cdps.ids[1]);
+    expect(cdps.ids[1].isZero()).to.be.false;
+
+    const debtOnMakerVaultB = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
+      vaultBId
+    );
+    const pricedCollateralonVaultB = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+      vaultBId
+    );
+
     expect(await address.providerWallet.getBalance()).to.be.gt(
       providerBalanceBeforeExecution
     );
 
-    // compound position of DSA on cDai and cEth
-    const compoundPosition = await contracts.compoundResolver.getCompoundData(
-      contracts.dsa.address,
-      [contracts.cDaiToken.address, contracts.cEthToken.address]
-    );
-
-    // https://compound.finance/docs/ctokens#exchange-rate
-    // calculate cEth/ETH rate to convert back cEth to ETH
-    // for comparing with the withdrew Ether to the deposited one.
-    const exchangeRateCethToEth = (await contracts.cEthToken.getCash())
-      .add(await contracts.cEthToken.totalBorrows())
-      .sub(await contracts.cEthToken.totalReserves())
-      .div(await contracts.cEthToken.totalSupply());
-
     // Estimated amount to borrowed token should be equal to the actual one read on compound contracts
-    expect(debtOnMakerBefore).to.be.equal(
-      compoundPosition[0].borrowBalanceStoredUser
+    expect(debtOnMakerBefore.sub(debtOnMakerVaultB)).to.be.lt(
+      ethers.utils.parseUnits("2", 0)
     );
 
     // Estimated amount of collateral should be equal to the actual one read on compound contracts
-    expect(
-      pricedCollateral.sub(
-        compoundPosition[1].balanceOfUser.mul(exchangeRateCethToEth)
-      )
-    ).to.be.lt(ethers.utils.parseUnits("1", 12));
+    expect(pricedCollateral).to.be.equal(pricedCollateralonVaultB);
 
-    const debtOnMakerAfter = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
-      vaultId
+    const debtOnMakerOnVaultAAfter = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
+      vaultAId
     );
-    const collateralOnMakerAfter = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
-      vaultId
+    const collateralOnMakerOnVaultAAfter = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+      vaultAId
     ); // in Ether.
 
     // We should not have borrowed DAI on maker or deposited ether on it.
-    expect(debtOnMakerAfter).to.be.equal(ethers.constants.Zero);
-    expect(collateralOnMakerAfter).to.be.equal(ethers.constants.Zero);
+    expect(debtOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
+    expect(collateralOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
 
     // DSA contain 1000 DAI
     expect(

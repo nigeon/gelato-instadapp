@@ -36,6 +36,7 @@ module.exports = {
       InstaList: "0x4c8a1BEb8a87765788946D6B19C6C6355194AbEb",
       InstaConnectors: "0xD6A602C01a023B98Ecfb29Df02FBA380d3B21E0c",
       InstaAccount: "0x939Daad09fC4A9B8f8A9352A485DAb2df4F4B3F8",
+      InstaMapping: "0xe81F70Cc7C0D46e12d70efc60607F16bbD617E88",
       ConnectAuth: "0xd1aFf9f2aCf800C876c409100D6F39AEa93Fc3D9",
       ConnectBasic: "0x6a31c5982C5Bc5533432913cf06a66b6D3333a95",
       ConnectGelato: "0x37A7009d424951dd5D5F155fA588D9a03C455163",
@@ -164,4 +165,20 @@ task(
       console.error(error, "\n");
       process.exit(1);
     }
+  });
+
+task("hardhatReset", "Reset back to a fresh forked state during runtime")
+  .addPositionalParam("provider", "Network Provider", undefined, types.json)
+  .setAction(async (taskArgs) => {
+    await taskArgs.provider.request({
+      method: "hardhat_reset",
+      params: [
+        {
+          forking: {
+            jsonRpcUrl: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_ID}`,
+            blockNumber: 11104384,
+          },
+        },
+      ],
+    });
   });
