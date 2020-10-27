@@ -39,7 +39,7 @@ const MAKER_INITIAL_DEBT = ethers.utils.parseUnits("1000", 18);
 // #endregion
 
 class Helper {
-  async address() {
+  async getWallets() {
     let userWallet;
     let userAddress;
     let providerWallet;
@@ -52,7 +52,7 @@ class Helper {
     providerAddress = await providerWallet.getAddress();
     executorAddress = await executorWallet.getAddress();
 
-    // Hardhat default accounts prefilled with 100 ETH
+    // Hardhat default wallets prefilled with 100 ETH
     expect(await userWallet.getBalance()).to.be.gt(
       ethers.utils.parseEther("10")
     );
@@ -67,7 +67,7 @@ class Helper {
     };
   }
 
-  async contracts() {
+  async getContracts() {
     // Deployed instances
     let connectGelato;
     let connectMaker;
@@ -221,61 +221,61 @@ class Helper {
   }
 
   async makerToCompoundTestSetup() {
-    let address = await this.address();
-    let contracts = await this.contracts();
+    const wallets = await this.getWallets();
+    const contracts = await this.getContracts();
     let vaultId;
 
     // Gelato Testing environment setup.
-    await this.enableGelatoConnectorsForFromMaker(address, contracts);
-    await this.executorDoStaking(address, contracts);
-    await this.providerDoFunding(address, contracts);
-    await this.providerChooseExecutor(address, contracts);
-    await this.providerAddCustomModuleForPayment(address, contracts);
-    await this.userCreateADSA(address, contracts);
-    vaultId = await this.userOpenDepositBorrowOnMakerVault(address, contracts);
-    let spells = await this.providerWhiteListTaskForMakerToCompound(
-      address,
+    await this.enableGelatoConnectorsForFromMaker(wallets, contracts);
+    await this.executorDoStaking(wallets, contracts);
+    await this.providerDoFunding(wallets, contracts);
+    await this.providerChooseExecutor(wallets, contracts);
+    await this.providerAddCustomModuleForPayment(wallets, contracts);
+    await this.userCreateADSA(wallets, contracts);
+    vaultId = await this.userOpenDepositBorrowOnMakerVault(wallets, contracts);
+    const spells = await this.providerWhiteListTaskForMakerToCompound(
+      wallets,
       contracts,
       vaultId
     );
 
     return {
-      address: address,
-      contracts: contracts,
-      vaultId: vaultId,
-      spells: spells,
+      wallets,
+      contracts,
+      vaultId,
+      spells,
     };
   }
 
   async makerETHAToMakerETHBSetup() {
-    let address = await this.address();
-    let contracts = await this.contracts();
+    const wallets = await this.getWallets();
+    const contracts = await this.getContracts();
     let vaultAId;
 
     // Gelato Testing environment setup.
-    await this.enableGelatoConnectorsForFromMaker(address, contracts);
-    await this.executorDoStaking(address, contracts);
-    await this.providerDoFunding(address, contracts);
-    await this.providerChooseExecutor(address, contracts);
-    await this.providerAddCustomModuleForPayment(address, contracts);
-    await this.userCreateADSA(address, contracts);
-    await this.masterAddETHBOnGemJoinMapping(address, contracts);
-    vaultAId = await this.userOpenDepositBorrowOnMakerVault(address, contracts);
-    let spells = await this.providerWhiteListTaskForMakerETHAToMakerETHB(
-      address,
+    await this.enableGelatoConnectorsForFromMaker(wallets, contracts);
+    await this.executorDoStaking(wallets, contracts);
+    await this.providerDoFunding(wallets, contracts);
+    await this.providerChooseExecutor(wallets, contracts);
+    await this.providerAddCustomModuleForPayment(wallets, contracts);
+    await this.userCreateADSA(wallets, contracts);
+    await this.masterAddETHBOnGemJoinMapping(wallets, contracts);
+    vaultAId = await this.userOpenDepositBorrowOnMakerVault(wallets, contracts);
+    const spells = await this.providerWhiteListTaskForMakerETHAToMakerETHB(
+      wallets,
       contracts,
       vaultAId
     );
 
     return {
-      address: address,
-      contracts: contracts,
-      vaultAId: vaultAId,
-      spells: spells,
+      wallets,
+      contracts,
+      vaultAId,
+      spells,
     };
   }
 
-  async enableGelatoConnectorsForFromMaker(address, contracts) {
+  async enableGelatoConnectorsForFromMaker(wallets, contracts) {
     //#region Enable Debt Bridge Connector and Gelato Provider Payment Connector
 
     // Debt Bridge Connector is used during refinancing of debt
@@ -287,7 +287,7 @@ class Helper {
     // transaction (user will pay during the execution of the task) task will
     // be executed. Improvind user experience.
 
-    await address.userWallet.sendTransaction({
+    await wallets.userWallet.sendTransaction({
       to: hre.network.config.InstaMaster,
       value: ethers.utils.parseEther("0.1"),
     });
@@ -324,7 +324,7 @@ class Helper {
     //#endregion
   }
 
-  async executorDoStaking(address, contracts) {
+  async executorDoStaking(wallets, contracts) {
     //#region Executor Staking on Gelato
 
     // For task execution provider will ask a executor to watch the
@@ -334,18 +334,18 @@ class Helper {
     // For safety measure Gelato ask the executor to stake a minimum
     // amount.
 
-    await contracts.gelatoCore.connect(address.executorWallet).stakeExecutor({
+    await contracts.gelatoCore.connect(wallets.executorWallet).stakeExecutor({
       value: await contracts.gelatoCore.minExecutorStake(),
     });
 
     expect(
-      await contracts.gelatoCore.isExecutorMinStaked(address.executorAddress)
+      await contracts.gelatoCore.isExecutorMinStaked(wallets.executorAddress)
     ).to.be.true;
 
     //#endregion
   }
 
-  async providerDoFunding(address, contracts) {
+  async providerDoFunding(wallets, contracts) {
     //#region Provider put some fund on gelato for paying future tasks executions
 
     // Provider put some funds in gelato system for paying the
@@ -360,20 +360,20 @@ class Helper {
 
     await expect(
       contracts.gelatoCore
-        .connect(address.providerWallet)
-        .provideFunds(address.providerAddress, {
+        .connect(wallets.providerWallet)
+        .provideFunds(wallets.providerAddress, {
           value: TASK_AUTOMATION_FUNDS,
         })
     ).to.emit(contracts.gelatoCore, "LogFundsProvided");
 
     expect(
-      await contracts.gelatoCore.providerFunds(address.providerAddress)
+      await contracts.gelatoCore.providerFunds(wallets.providerAddress)
     ).to.be.equal(TASK_AUTOMATION_FUNDS);
 
     //#endregion
   }
 
-  async providerChooseExecutor(address, contracts) {
+  async providerChooseExecutor(wallets, contracts) {
     //#region Provider choose a executor
 
     // Provider choose a executor who will execute futur task
@@ -381,18 +381,18 @@ class Helper {
 
     await expect(
       contracts.gelatoCore
-        .connect(address.providerWallet)
-        .providerAssignsExecutor(address.executorAddress)
+        .connect(wallets.providerWallet)
+        .providerAssignsExecutor(wallets.executorAddress)
     ).to.emit(contracts.gelatoCore, "LogProviderAssignedExecutor");
 
     expect(
-      await contracts.gelatoCore.executorByProvider(address.providerAddress)
-    ).to.be.equal(address.executorAddress);
+      await contracts.gelatoCore.executorByProvider(wallets.providerAddress)
+    ).to.be.equal(wallets.executorAddress);
 
     //#endregion
   }
 
-  async providerAddCustomModuleForPayment(address, contracts) {
+  async providerAddCustomModuleForPayment(wallets, contracts) {
     //#region Provider will add a module
 
     // By adding a module the provider will format future task's
@@ -401,15 +401,15 @@ class Helper {
 
     await expect(
       contracts.gelatoCore
-        .connect(address.providerWallet)
+        .connect(wallets.providerWallet)
         .addProviderModules([contracts.dsaProviderModule.address])
     ).to.emit(contracts.gelatoCore, "LogProviderModuleAdded");
 
     expect(
       await contracts.gelatoCore
-        .connect(address.providerWallet)
+        .connect(wallets.providerWallet)
         .isModuleProvided(
-          address.providerAddress,
+          wallets.providerAddress,
           contracts.dsaProviderModule.address
         )
     ).to.be.true;
@@ -417,7 +417,7 @@ class Helper {
     //#endregion
   }
 
-  async userCreateADSA(address, contracts) {
+  async userCreateADSA(wallets, contracts) {
     //#region User create a DeFi Smart Account
 
     // User create a Instadapp DeFi Smart Account
@@ -428,7 +428,7 @@ class Helper {
     const dsaAccountCount = await contracts.instaList.accounts();
 
     await expect(
-      contracts.instaIndex.build(address.userAddress, 1, address.userAddress)
+      contracts.instaIndex.build(wallets.userAddress, 1, wallets.userAddress)
     ).to.emit(contracts.instaIndex, "LogAccountCreated");
     const dsaID = dsaAccountCount.add(1);
     await expect(await contracts.instaList.accounts()).to.be.equal(dsaID);
@@ -444,7 +444,7 @@ class Helper {
     //#endregion
   }
 
-  async userOpenDepositBorrowOnMakerVault(address, contracts) {
+  async userOpenDepositBorrowOnMakerVault(wallets, contracts) {
     //#region Step 8 User open a Vault, put some ether on it and borrow some dai
 
     // User open a maker vault
@@ -460,7 +460,7 @@ class Helper {
     await dsa.cast(
       [hre.network.config.ConnectMaker],
       [openVault],
-      address.userAddress
+      wallets.userAddress
     );
 
     const cdps = await contracts.getCdps.getCdpsAsc(
@@ -479,7 +479,7 @@ class Helper {
           inputs: [vaultId, MAKER_INITIAL_ETH, 0, 0],
         }),
       ],
-      address.userAddress,
+      wallets.userAddress,
       {
         value: MAKER_INITIAL_ETH,
       }
@@ -494,7 +494,7 @@ class Helper {
           inputs: [vaultId, MAKER_INITIAL_DEBT, 0, 0],
         }),
       ],
-      address.userAddress
+      wallets.userAddress
     );
 
     expect(await contracts.daiToken.balanceOf(dsa.address)).to.be.equal(
@@ -506,8 +506,8 @@ class Helper {
     return vaultId;
   }
 
-  async masterAddETHBOnGemJoinMapping(address, contracts) {
-    await address.userWallet.sendTransaction({
+  async masterAddETHBOnGemJoinMapping(wallets, contracts) {
+    await wallets.userWallet.sendTransaction({
       to: hre.network.config.InstaMaster,
       value: ethers.utils.parseEther("0.1"),
     });
@@ -526,7 +526,7 @@ class Helper {
   }
 
   // Instadapp UI should do the same implementation for submitting debt bridge task
-  async providerWhiteListTaskForMakerToCompound(address, contracts, vaultId) {
+  async providerWhiteListTaskForMakerToCompound(wallets, contracts, vaultId) {
     //#region Step 9 Provider should whitelist task
 
     // By WhiteList task, the provider can constrain the type
@@ -625,7 +625,7 @@ class Helper {
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectGelatoProviderPaymentABI,
         functionname: "payProvider",
-        inputs: [address.providerAddress, ETH, 0, "605", 0],
+        inputs: [wallets.providerAddress, ETH, 0, "605", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
@@ -644,26 +644,26 @@ class Helper {
 
     await expect(
       contracts.gelatoCore
-        .connect(address.providerWallet)
+        .connect(wallets.providerWallet)
         .provideTaskSpecs([connectGelatoDebtBridgeFromMakerTaskSpec])
     ).to.emit(contracts.gelatoCore, "LogTaskSpecProvided");
 
     expect(
       await contracts.gelatoCore
-        .connect(address.providerWallet)
+        .connect(wallets.providerWallet)
         .isTaskSpecProvided(
-          address.providerAddress,
+          wallets.providerAddress,
           connectGelatoDebtBridgeFromMakerTaskSpec
         )
     ).to.be.equal("OK");
 
     expect(
       await contracts.gelatoCore
-        .connect(address.providerWallet)
+        .connect(wallets.providerWallet)
         .taskSpecGasPriceCeil(
-          address.providerAddress,
+          wallets.providerAddress,
           await contracts.gelatoCore
-            .connect(address.providerWallet)
+            .connect(wallets.providerWallet)
             .hashTaskSpec(connectGelatoDebtBridgeFromMakerTaskSpec)
         )
     ).to.be.equal(gasPriceCeil);
@@ -675,7 +675,7 @@ class Helper {
 
   // Instadapp UI should do the same implementation for submitting debt bridge task
   async providerWhiteListTaskForMakerETHAToMakerETHB(
-    address,
+    wallets,
     contracts,
     vaultId
   ) {
@@ -686,7 +686,7 @@ class Helper {
 
     //#region Actions
 
-    let spells = [];
+    const spells = [];
 
     const debtBridgeCalculationForFullRefinance = new GelatoCoreLib.Action({
       addr: contracts.connectGelatoDebtBridgeFromMaker.address,
@@ -789,7 +789,7 @@ class Helper {
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectGelatoProviderPaymentABI,
         functionname: "payProvider",
-        inputs: [address.providerAddress, ETH, 0, "605", 0],
+        inputs: [wallets.providerAddress, ETH, 0, "605", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
@@ -808,26 +808,26 @@ class Helper {
 
     await expect(
       contracts.gelatoCore
-        .connect(address.providerWallet)
+        .connect(wallets.providerWallet)
         .provideTaskSpecs([connectGelatoDebtBridgeFromMakerTaskSpec])
     ).to.emit(contracts.gelatoCore, "LogTaskSpecProvided");
 
     expect(
       await contracts.gelatoCore
-        .connect(address.providerWallet)
+        .connect(wallets.providerWallet)
         .isTaskSpecProvided(
-          address.providerAddress,
+          wallets.providerAddress,
           connectGelatoDebtBridgeFromMakerTaskSpec
         )
     ).to.be.equal("OK");
 
     expect(
       await contracts.gelatoCore
-        .connect(address.providerWallet)
+        .connect(wallets.providerWallet)
         .taskSpecGasPriceCeil(
-          address.providerAddress,
+          wallets.providerAddress,
           await contracts.gelatoCore
-            .connect(address.providerWallet)
+            .connect(wallets.providerWallet)
             .hashTaskSpec(connectGelatoDebtBridgeFromMakerTaskSpec)
         )
     ).to.be.equal(gasPriceCeil);

@@ -27,9 +27,7 @@ contract ProviderModuleDSA is GelatoProviderModuleStandard {
 
     // TO DO: remove `public` after hardhat file import bugfix
     // https://github.com/nomiclabs/hardhat/issues/916
-    constructor(address _gelatoCore, address _connectGelatoProviderPayment)
-        public
-    {
+    constructor(address _gelatoCore, address _connectGelatoProviderPayment) {
         gelatoCore = _gelatoCore;
         connectGelatoProviderPayment = _connectGelatoProviderPayment;
     }

@@ -286,8 +286,8 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
     // @param _setId Id for loading from instaMemory.
     function savePartialRefinanceDataToMemory(
         uint256 _vaultId,
-        uint256 _wMinColRatioMaker, // should be in ray because maker use ray standard
-        uint256 _wMinColRatioB, // should be in wad because compound use wad standard
+        uint256 _wMinColRatioMaker,
+        uint256 _wMinColRatioB,
         address _priceOracle,
         bytes calldata _oraclePayload,
         uint256, /*_getId,*/
@@ -333,7 +333,7 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
         uint256 gasFeesPaidFromCol = _getGelatoProviderFees();
 
         _setInstaMemoryUints(
-            _add(wDaiDebtToMove, 1e18),
+            _add(wDaiDebtToMove, 1), // 1 wei DAI buffer: MakerResolver debt inaccuracy
             _sub(wColToWithdrawFromMaker, gasFeesPaidFromCol), // _wColToDepositInB
             wDaiDebtToMove,
             gasFeesPaidFromCol
@@ -490,8 +490,8 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
         // For full refinance we do NOT need to store exact values: uint(-1) functionality
         // setUint(601, wDaiDebtToMove); // for partialRefinancing: payback maker
         // setUint(602, wColToWithdrawFromMaker); // for partialRefinancing: withdraw maker
-        setUint(603, _wColToDepositInB); // deposit compound
-        setUint(604, _wDaiDebtToMove); // borrow compound
+        setUint(603, _wColToDepositInB); // deposit B
+        setUint(604, _wDaiDebtToMove); // borrow B
         setUint(605, _gasFeesPaidFromCol); // pay the provider
     }
 

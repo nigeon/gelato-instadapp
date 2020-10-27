@@ -716,7 +716,7 @@ describe("Debt Bridge with External Provider", function () {
     });
 
     // ======= GELATO TASK SETUP ======
-    const refinanceIfCompoundBorrowIsBetter = new GelatoCoreLib.Task({
+    const refinanceIfVaultUnsafe = new GelatoCoreLib.Task({
       conditions: [conditionMakerVaultUnsafeObj],
       actions: spells,
     });
@@ -737,7 +737,7 @@ describe("Debt Bridge with External Provider", function () {
             functionname: "submitTask",
             inputs: [
               gelatoExternalProvider,
-              refinanceIfCompoundBorrowIsBetter,
+              refinanceIfVaultUnsafe,
               expiryDate,
             ],
           }),
@@ -753,7 +753,7 @@ describe("Debt Bridge with External Provider", function () {
       id: await gelatoCore.currentTaskReceiptId(),
       userProxy: dsa.address,
       provider: gelatoExternalProvider,
-      tasks: [refinanceIfCompoundBorrowIsBetter],
+      tasks: [refinanceIfVaultUnsafe],
       expiryDate,
     });
 

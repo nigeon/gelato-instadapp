@@ -167,18 +167,19 @@ task(
     }
   });
 
-task("hardhatReset", "Reset back to a fresh forked state during runtime")
-  .addPositionalParam("provider", "Network Provider", undefined, types.json)
-  .setAction(async (taskArgs) => {
-    await taskArgs.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_ID}`,
-            blockNumber: 11104384,
-          },
+task(
+  "hardhatReset",
+  "Reset back to a fresh forked state during runtime"
+).setAction(async (_, hre) => {
+  await hre.network.provider.request({
+    method: "hardhat_reset",
+    params: [
+      {
+        forking: {
+          jsonRpcUrl: hre.network.config.forking.url,
+          blockNumber: hre.network.config.forking.blockNumber,
         },
-      ],
-    });
+      },
+    ],
   });
+});

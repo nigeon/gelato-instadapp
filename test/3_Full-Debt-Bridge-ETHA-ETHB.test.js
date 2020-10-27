@@ -1,6 +1,6 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {ethers, network} = hre;
+const {ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
 const Helper = require("./helpers/Full-Refinance-External-Provider.helper");
@@ -16,7 +16,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
   }
 
   let contracts;
-  let address;
+  let wallets;
   let constants;
   let ABI;
 
@@ -24,26 +24,26 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
   let vaultAId;
 
   // For TaskSpec and for Task
-  let spells = [];
+  let gelatoDebtBridgeSpells = [];
 
   // Cross test var
   let taskReceipt;
 
   before(async function () {
     // Reset back to a fresh forked state during runtime
-    await hre.run("hardhatReset", {provider: network.provider});
+    await hre.run("hardhatReset");
     const result = await helper.makerETHAToMakerETHBSetup();
 
-    address = result.address;
+    wallets = result.wallets;
     contracts = result.contracts;
     vaultAId = result.vaultAId;
-    spells = result.spells;
+    gelatoDebtBridgeSpells = result.spells;
 
     ABI = await helper.getABI();
     constants = await helper.getConstants();
   });
 
-  it("#1: DSA give Authorization to Gelato to execute action his behalf.", async function () {
+  it("#1: DSA authorizes Gelato to cast spells.", async function () {
     //#region User give authorization to gelato to use his DSA on his behalf.
 
     // Instadapp DSA contract give the possibility to the user to delegate
@@ -60,7 +60,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
           inputs: [contracts.gelatoCore.address],
         }),
       ],
-      address.userAddress
+      wallets.userAddress
     );
 
     expect(await contracts.dsa.isAuth(contracts.gelatoCore.address)).to.be.true;
@@ -68,7 +68,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     //#endregion
   });
 
-  it("#2: User submits Debt refinancing task if market move to Gelato via DSA", async function () {
+  it("#2: User submits automated Debt Bridge task to Gelato via DSA", async function () {
     //#region User submit a Debt Refinancing task if market move against him
 
     // User submit the refinancing task if market move against him.
@@ -86,20 +86,20 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
         await hre.run("abi-encode-withselector", {
           abi: ABI.PriceOracleResolverABI,
           functionname: "getMockPrice",
-          inputs: [address.userAddress],
+          inputs: [wallets.userAddress],
         }),
         constants.MIN_COL_RATIO_MAKER
       ),
     });
 
     // ======= GELATO TASK SETUP ======
-    const refinanceIfCompoundBorrowIsBetter = new GelatoCoreLib.Task({
+    const refinanceFromEthAToBIfVaultUnsafe = new GelatoCoreLib.Task({
       conditions: [conditionMakerVaultUnsafeObj],
-      actions: spells,
+      actions: gelatoDebtBridgeSpells,
     });
 
     const gelatoExternalProvider = new GelatoCoreLib.GelatoProvider({
-      addr: address.providerAddress, // Gelato Provider Address
+      addr: wallets.providerAddress, // Gelato Provider Address
       module: contracts.dsaProviderModule.address, // Gelato DSA module
     });
 
@@ -114,12 +114,12 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
             functionname: "submitTask",
             inputs: [
               gelatoExternalProvider,
-              refinanceIfCompoundBorrowIsBetter,
+              refinanceFromEthAToBIfVaultUnsafe,
               expiryDate,
             ],
           }),
         ], // datas
-        address.userAddress, // origin
+        wallets.userAddress, // origin
         {
           gasLimit: 5000000,
         }
@@ -130,7 +130,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
       id: await contracts.gelatoCore.currentTaskReceiptId(),
       userProxy: contracts.dsa.address,
       provider: gelatoExternalProvider,
-      tasks: [refinanceIfCompoundBorrowIsBetter],
+      tasks: [refinanceFromEthAToBIfVaultUnsafe],
       expiryDate,
     });
 
@@ -141,7 +141,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
   // Bots constatly check whether the submitted task is executable (by calling canExec)
   // If the task becomes executable (returns "OK"), the "exec" function will be called
   // which will execute the debt refinancing on behalf of the user
-  it("#3: Use ETH-A to ETH-B refinancing if the maker vault become unsafe after a market move.", async function () {
+  it("#3: Auto-refinance from ETH-A to ETH-B, if the Maker vault became unsafe.", async function () {
     // Steps
     // Step 1: Market Move against the user (Mock)
     // Step 2: Executor execute the user's task
@@ -160,7 +160,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
 
     expect(
       await contracts.gelatoCore
-        .connect(address.executorWallet)
+        .connect(wallets.executorWallet)
         .canExec(taskReceipt, constants.GAS_LIMIT, gelatoGasPrice)
     ).to.be.equal("ConditionNotOk:MakerVaultNotUnsafe");
 
@@ -171,7 +171,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
 
     expect(
       await contracts.gelatoCore
-        .connect(address.executorWallet)
+        .connect(wallets.executorWallet)
         .canExec(taskReceipt, constants.GAS_LIMIT, gelatoGasPrice)
     ).to.be.equal("OK");
 
@@ -198,10 +198,10 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     ).sub(gasFeesPaidFromCol);
 
     //#endregion
-    const providerBalanceBeforeExecution = await address.providerWallet.getBalance();
+    const providerBalanceBeforeExecution = await wallets.providerWallet.getBalance();
 
     await expect(
-      contracts.gelatoCore.connect(address.executorWallet).exec(taskReceipt, {
+      contracts.gelatoCore.connect(wallets.executorWallet).exec(taskReceipt, {
         gasPrice: gelatoGasPrice, // Exectutor must use gelatoGasPrice (Chainlink fast gwei)
         gasLimit: constants.GAS_LIMIT,
       })
@@ -232,21 +232,21 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     const debtOnMakerVaultB = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
       vaultBId
     );
-    const pricedCollateralonVaultB = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+    const pricedCollateralOnVaultB = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
       vaultBId
     );
 
-    expect(await address.providerWallet.getBalance()).to.be.gt(
+    expect(await wallets.providerWallet.getBalance()).to.be.gt(
       providerBalanceBeforeExecution
     );
 
     // Estimated amount to borrowed token should be equal to the actual one read on compound contracts
-    expect(debtOnMakerBefore.sub(debtOnMakerVaultB)).to.be.lt(
-      ethers.utils.parseUnits("2", 0)
+    expect(debtOnMakerBefore.sub(debtOnMakerVaultB)).to.be.lte(
+      ethers.utils.parseUnits("1", 0)
     );
 
     // Estimated amount of collateral should be equal to the actual one read on compound contracts
-    expect(pricedCollateral).to.be.equal(pricedCollateralonVaultB);
+    expect(pricedCollateral).to.be.equal(pricedCollateralOnVaultB);
 
     const debtOnMakerOnVaultAAfter = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
       vaultAId
@@ -259,12 +259,12 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     expect(debtOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
     expect(collateralOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
 
-    // DSA contain 1000 DAI
+    // DSA has maximum 2 wei DAI in it due to maths inaccuracies
     expect(
       (await contracts.daiToken.balanceOf(contracts.dsa.address)).sub(
         constants.MAKER_INITIAL_DEBT
       )
-    ).to.be.lt(ethers.utils.parseUnits("2", 0));
+    ).to.be.lte(ethers.utils.parseUnits("1", 0));
 
     //#endregion
   });
