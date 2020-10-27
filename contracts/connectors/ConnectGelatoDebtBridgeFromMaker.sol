@@ -20,22 +20,29 @@ interface GelatoGasPriceOracle {
     function latestAnswer() external view returns (int256);
 }
 
-interface IMakerResolver {
-    struct VaultData {
-        uint256 id;
-        address owner;
-        string colType;
-        uint256 collateral;
-        uint256 art;
-        uint256 debt;
-        uint256 liquidatedCol;
-        uint256 borrowRate;
-        uint256 colPrice;
-        uint256 liquidationRatio;
-        address vaultAddress;
-    }
+interface ManagerLike {
+    function ilks(uint256) external view returns (bytes32);
 
-    function getVaultById(uint256 id) external view returns (VaultData memory);
+    function urns(uint256) external view returns (address);
+
+    function vat() external view returns (address);
+}
+
+interface VatLike {
+    function ilks(bytes32)
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        );
+
+    function dai(address) external view returns (uint256);
+
+    function urns(bytes32, address) external view returns (uint256, uint256);
 }
 
 library GelatoBytes {
@@ -153,6 +160,13 @@ abstract contract Helpers is ConnectorInterface, DSMath {
     uint256 internal __id;
 
     /**
+     * @dev Return Maker MCD Manager Address.
+     */
+    function getMcdManager() internal pure returns (address) {
+        return 0x5ef30b9986345249bc32d8928B7ee64DE9435E39;
+    }
+
+    /**
      * @dev Return ethereum address
      */
     function getAddressETH() internal pure returns (address) {
@@ -226,16 +240,36 @@ abstract contract GelatoHelpers is Helpers {
 }
 
 abstract contract MakerResolver is GelatoHelpers {
-    function getMakerVault(uint256 _vaultId)
-        public
+    function _getVaultData(ManagerLike cdpManager, uint256 vault)
+        internal
         view
-        returns (IMakerResolver.VaultData memory)
+        returns (bytes32 ilk, address urn)
     {
-        return IMakerResolver(_getMakerResolver()).getVaultById(_vaultId);
+        ilk = cdpManager.ilks(vault);
+        urn = cdpManager.urns(vault);
     }
 
-    function getMakerVaultDebt(uint256 _vaultId) public view returns (uint256) {
-        return getMakerVault(_vaultId).debt;
+    function _getManager() internal pure returns (ManagerLike) {
+        return ManagerLike(getMcdManager());
+    }
+
+    function getMakerVaultDebt(uint256 _vaultId)
+        public
+        view
+        returns (uint256 wad)
+    {
+        ManagerLike cdpManager = _getManager();
+
+        (bytes32 ilk, address urn) = _getVaultData(cdpManager, _vaultId);
+        VatLike vat = VatLike(cdpManager.vat());
+        (, uint256 rate, , , ) = VatLike(vat).ilks(ilk);
+        (, uint256 art) = VatLike(vat).urns(ilk, urn);
+        uint256 dai = VatLike(vat).dai(urn);
+
+        uint256 rad = _sub(_mul(art, rate), dai);
+        wad = rad / RAY;
+
+        wad = _mul(wad, RAY) < rad ? wad + 1 : wad;
     }
 
     function getMakerVaultCollateralBalance(uint256 _vaultId)
@@ -243,19 +277,13 @@ abstract contract MakerResolver is GelatoHelpers {
         view
         returns (uint256)
     {
-        return getMakerVault(_vaultId).collateral;
-    }
+        ManagerLike cdpManager = _getManager();
 
-    function getMakerVaultCollateralType(uint256 _vaultId)
-        public
-        view
-        returns (string memory)
-    {
-        return getMakerVault(_vaultId).colType;
-    }
+        VatLike vat = VatLike(cdpManager.vat());
+        (bytes32 ilk, address urn) = _getVaultData(cdpManager, _vaultId);
+        (uint256 ink, ) = vat.urns(ilk, urn);
 
-    function _getMakerResolver() internal pure returns (address) {
-        return 0x0A7008B38E7015F8C36A49eEbc32513ECA8801E5;
+        return ink;
     }
 }
 

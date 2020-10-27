@@ -263,10 +263,8 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
 
     // DSA contain 1000 DAI
     expect(
-      (await contracts.daiToken.balanceOf(contracts.dsa.address)).sub(
-        constants.MAKER_INITIAL_DEBT
-      )
-    ).to.be.lte(ethers.utils.parseUnits("1", 0));
+      await contracts.daiToken.balanceOf(contracts.dsa.address)
+    ).to.be.equal(constants.MAKER_INITIAL_DEBT);
 
     //#endregion
   });

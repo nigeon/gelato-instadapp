@@ -241,9 +241,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     );
 
     // Estimated amount to borrowed token should be equal to the actual one read on compound contracts
-    expect(debtOnMakerBefore.sub(debtOnMakerVaultB)).to.be.lte(
-      ethers.utils.parseUnits("1", 0)
-    );
+    expect(debtOnMakerBefore).to.be.equal(debtOnMakerVaultB);
 
     // Estimated amount of collateral should be equal to the actual one read on compound contracts
     expect(pricedCollateral).to.be.equal(pricedCollateralOnVaultB);
@@ -261,10 +259,8 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
 
     // DSA has maximum 2 wei DAI in it due to maths inaccuracies
     expect(
-      (await contracts.daiToken.balanceOf(contracts.dsa.address)).sub(
-        constants.MAKER_INITIAL_DEBT
-      )
-    ).to.be.lte(ethers.utils.parseUnits("1", 0));
+      await contracts.daiToken.balanceOf(contracts.dsa.address)
+    ).to.be.equal(constants.MAKER_INITIAL_DEBT);
 
     //#endregion
   });
