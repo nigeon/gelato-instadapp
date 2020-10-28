@@ -20,7 +20,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
   let constants;
   let ABI;
 
-  // Payload Params for ConnectGelatoDebtBridgeFromMaker and ConditionMakerVaultUnsafe
+  // Payload Params for ConnectGelatoFullDebtBridgeFromMaker and ConditionMakerVaultUnsafe
   let vaultAId;
 
   // For TaskSpec and for Task
@@ -188,11 +188,11 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     const gasFeesPaidFromCol = ethers.utils
       .parseUnits(String(1933090 + 19331 * 2), 0)
       .mul(gelatoGasPrice);
-    const debtOnMakerBefore = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerBefore = await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultDebt(
       vaultAId
     );
     const pricedCollateral = (
-      await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+      await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultCollateralBalance(
         vaultAId
       )
     ).sub(gasFeesPaidFromCol);
@@ -229,10 +229,10 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     let vaultBId = String(cdps.ids[1]);
     expect(cdps.ids[1].isZero()).to.be.false;
 
-    const debtOnMakerVaultB = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerVaultB = await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultDebt(
       vaultBId
     );
-    const pricedCollateralOnVaultB = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+    const pricedCollateralOnVaultB = await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultCollateralBalance(
       vaultBId
     );
 
@@ -246,10 +246,10 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     // Estimated amount of collateral should be equal to the actual one read on compound contracts
     expect(pricedCollateral).to.be.equal(pricedCollateralOnVaultB);
 
-    const debtOnMakerOnVaultAAfter = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerOnVaultAAfter = await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultDebt(
       vaultAId
     );
-    const collateralOnMakerOnVaultAAfter = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+    const collateralOnMakerOnVaultAAfter = await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultCollateralBalance(
       vaultAId
     ); // in Ether.
 

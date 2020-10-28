@@ -20,7 +20,7 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
   let constants;
   let ABI;
 
-  // Payload Params for ConnectGelatoDebtBridgeFromMaker and ConditionMakerVaultUnsafe
+  // Payload Params for ConnectGelatoFullDebtBridgeFromMaker and ConditionMakerVaultUnsafe
   let vaultId;
 
   // For TaskSpec and for Task
@@ -186,11 +186,11 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
     const gasFeesPaidFromCol = ethers.utils
       .parseUnits(String(1933090 + 19331 * 2), 0)
       .mul(gelatoGasPrice);
-    const debtOnMakerBefore = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerBefore = await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultDebt(
       vaultId
     );
     const pricedCollateral = (
-      await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+      await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultCollateralBalance(
         vaultId
       )
     ).sub(gasFeesPaidFromCol);
@@ -250,10 +250,10 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
       )
     ).to.be.lt(ethers.utils.parseUnits("1", 12));
 
-    const debtOnMakerAfter = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerAfter = await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultDebt(
       vaultId
     );
-    const collateralOnMakerAfter = await contracts.connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+    const collateralOnMakerAfter = await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultCollateralBalance(
       vaultId
     ); // in Ether.
 

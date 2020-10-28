@@ -13,7 +13,7 @@ const ConnectMaker = require("../pre-compiles/ConnectMaker.json");
 const ConnectCompound = require("../pre-compiles/ConnectCompound.json");
 const ConnectInstaPool = require("../pre-compiles/ConnectInstaPool.json");
 const ConnectAuth = require("../pre-compiles/ConnectAuth.json");
-const ConnectGelatoDebtBridgeFromMakerABI = require("../artifacts/contracts/connectors/ConnectGelatoDebtBridgeFromMaker.sol/ConnectGelatoDebtBridgeFromMaker.json")
+const ConnectGelatoFullDebtBridgeFromMakerABI = require("../artifacts/contracts/connectors/ConnectGelatoPartialDebtBridgeFromMaker.sol/ConnectGelatoPartialDebtBridgeFromMaker.json")
   .abi;
 const ConnectGelatoProviderPaymentABI = require("../artifacts/contracts/connectors/ConnectGelatoProviderPayment.sol/ConnectGelatoProviderPayment.json")
   .abi;
@@ -148,7 +148,7 @@ describe("Debt Bridge with External Provider", function () {
 
   // Contracts to deploy and use for local testing
   let conditionMakerVaultUnsafe;
-  let connectGelatoDebtBridgeFromMaker;
+  let connectGelatoPartialDebtBridgeFromMaker;
   let connectGelatoProviderPayment;
   let priceOracleResolver;
   let dsaProviderModule;
@@ -156,7 +156,7 @@ describe("Debt Bridge with External Provider", function () {
   // Creation during test
   let dsa;
 
-  // Payload Params for ConnectGelatoDebtBridgeFromMaker and ConditionMakerVaultUnsafe
+  // Payload Params for ConnectGelatoPartialDebtBridgeFromMaker and ConditionMakerVaultUnsafe
   let vaultId;
 
   // For TaskSpec and for Task
@@ -251,13 +251,13 @@ describe("Debt Bridge with External Provider", function () {
     conditionMakerVaultUnsafe = await ConditionMakerVaultUnsafe.deploy();
     await conditionMakerVaultUnsafe.deployed();
 
-    const ConnectGelatoDebtBridgeFromMaker = await ethers.getContractFactory(
-      "ConnectGelatoDebtBridgeFromMaker"
+    const ConnectGelatoPartialDebtBridgeFromMaker = await ethers.getContractFactory(
+      "ConnectGelatoPartialDebtBridgeFromMaker"
     );
-    connectGelatoDebtBridgeFromMaker = await ConnectGelatoDebtBridgeFromMaker.deploy(
+    connectGelatoPartialDebtBridgeFromMaker = await ConnectGelatoPartialDebtBridgeFromMaker.deploy(
       (await instaConnectors.connectorLength()).add(1)
     );
-    await connectGelatoDebtBridgeFromMaker.deployed();
+    await connectGelatoPartialDebtBridgeFromMaker.deployed();
 
     const ConnectGelatoProviderPayment = await ethers.getContractFactory(
       "ConnectGelatoProviderPayment"
@@ -332,7 +332,7 @@ describe("Debt Bridge with External Provider", function () {
 
     await instaConnectors
       .connect(instaMaster)
-      .enable(connectGelatoDebtBridgeFromMaker.address);
+      .enable(connectGelatoPartialDebtBridgeFromMaker.address);
 
     await instaConnectors
       .connect(instaMaster)
@@ -345,7 +345,7 @@ describe("Debt Bridge with External Provider", function () {
 
     expect(
       await instaConnectors.isConnector([
-        connectGelatoDebtBridgeFromMaker.address,
+        connectGelatoPartialDebtBridgeFromMaker.address,
       ])
     ).to.be.true;
     expect(
@@ -538,9 +538,9 @@ describe("Debt Bridge with External Provider", function () {
     //#region Actions
 
     const debtBridgeCalculation = new GelatoCoreLib.Action({
-      addr: connectGelatoDebtBridgeFromMaker.address,
+      addr: connectGelatoPartialDebtBridgeFromMaker.address,
       data: await hre.run("abi-encode-withselector", {
-        abi: ConnectGelatoDebtBridgeFromMakerABI,
+        abi: ConnectGelatoFullDebtBridgeFromMakerABI,
         functionname: "savePartialRefinanceDataToMemory",
         inputs: [
           vaultId,
@@ -647,7 +647,7 @@ describe("Debt Bridge with External Provider", function () {
 
     const gasPriceCeil = ethers.constants.MaxUint256;
 
-    const connectGelatoDebtBridgeFromMakerTaskSpec = new GelatoCoreLib.TaskSpec(
+    const connectGelatoFullDebtBridgeFromMakerTaskSpec = new GelatoCoreLib.TaskSpec(
       {
         conditions: [conditionMakerVaultUnsafe.address],
         actions: spells,
@@ -658,7 +658,7 @@ describe("Debt Bridge with External Provider", function () {
     await expect(
       gelatoCore
         .connect(providerWallet)
-        .provideTaskSpecs([connectGelatoDebtBridgeFromMakerTaskSpec])
+        .provideTaskSpecs([connectGelatoFullDebtBridgeFromMakerTaskSpec])
     ).to.emit(gelatoCore, "LogTaskSpecProvided");
 
     expect(
@@ -666,7 +666,7 @@ describe("Debt Bridge with External Provider", function () {
         .connect(providerWallet)
         .isTaskSpecProvided(
           providerAddress,
-          connectGelatoDebtBridgeFromMakerTaskSpec
+          connectGelatoFullDebtBridgeFromMakerTaskSpec
         )
     ).to.be.equal("OK");
 
@@ -677,7 +677,7 @@ describe("Debt Bridge with External Provider", function () {
           providerAddress,
           await gelatoCore
             .connect(providerWallet)
-            .hashTaskSpec(connectGelatoDebtBridgeFromMakerTaskSpec)
+            .hashTaskSpec(connectGelatoFullDebtBridgeFromMakerTaskSpec)
         )
     ).to.be.equal(gasPriceCeil);
 
@@ -798,12 +798,12 @@ describe("Debt Bridge with External Provider", function () {
     const gasFeesPaidFromCol = ethers.utils
       .parseUnits(String(1933090 + 19331 * 2), 0)
       .mul(gelatoGasPrice);
-    const debtOnMakerBefore = await connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerBefore = await connectGelatoPartialDebtBridgeFromMaker.getMakerVaultDebt(
       vaultId
     );
     const pricedCollateral = wmul(
       (
-        await connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+        await connectGelatoPartialDebtBridgeFromMaker.getMakerVaultCollateralBalance(
           vaultId
         )
       ).sub(gasFeesPaidFromCol),
@@ -882,10 +882,10 @@ describe("Debt Bridge with External Provider", function () {
       )
     ).to.be.lt(ethers.utils.parseUnits("1", 12));
 
-    const debtOnMakerAfter = await connectGelatoDebtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerAfter = await connectGelatoPartialDebtBridgeFromMaker.getMakerVaultDebt(
       vaultId
     );
-    const collateralOnMakerAfter = await connectGelatoDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+    const collateralOnMakerAfter = await connectGelatoPartialDebtBridgeFromMaker.getMakerVaultCollateralBalance(
       vaultId
     ); // in Ether.
 

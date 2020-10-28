@@ -23,7 +23,7 @@ const PriceOracleResolverABI = require("../../artifacts/contracts/resolvers/Pric
   .abi;
 const ConnectGelatoProviderPaymentABI = require("../../artifacts/contracts/connectors/ConnectGelatoProviderPayment.sol/ConnectGelatoProviderPayment.json")
   .abi;
-const ConnectGelatoDebtBridgeFromMakerABI = require("../../artifacts/contracts/connectors/ConnectGelatoDebtBridgeFromMaker.sol/ConnectGelatoDebtBridgeFromMaker.json")
+const ConnectGelatoFullDebtBridgeFromMakerABI = require("../../artifacts/contracts/connectors/ConnectGelatoFullDebtBridgeFromMaker.sol/ConnectGelatoFullDebtBridgeFromMaker.json")
   .abi;
 
 const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -87,7 +87,7 @@ class Helper {
     let compoundResolver;
     // Contracts to deploy and use for local testing
     let conditionMakerVaultUnsafe;
-    let connectGelatoDebtBridgeFromMaker;
+    let connectGelatoFullDebtBridgeFromMaker;
     let connectGelatoProviderPayment;
     let priceOracleResolver;
     let dsaProviderModule;
@@ -169,13 +169,13 @@ class Helper {
     conditionMakerVaultUnsafe = await ConditionMakerVaultUnsafe.deploy();
     await conditionMakerVaultUnsafe.deployed();
 
-    const ConnectGelatoDebtBridgeFromMaker = await ethers.getContractFactory(
-      "ConnectGelatoDebtBridgeFromMaker"
+    const ConnectGelatoFullDebtBridgeFromMaker = await ethers.getContractFactory(
+      "ConnectGelatoFullDebtBridgeFromMaker"
     );
-    connectGelatoDebtBridgeFromMaker = await ConnectGelatoDebtBridgeFromMaker.deploy(
+    connectGelatoFullDebtBridgeFromMaker = await ConnectGelatoFullDebtBridgeFromMaker.deploy(
       (await instaConnectors.connectorLength()).add(1)
     );
-    await connectGelatoDebtBridgeFromMaker.deployed();
+    await connectGelatoFullDebtBridgeFromMaker.deployed();
 
     const ConnectGelatoProviderPayment = await ethers.getContractFactory(
       "ConnectGelatoProviderPayment"
@@ -212,7 +212,7 @@ class Helper {
       instaConnectors: instaConnectors,
       compoundResolver: compoundResolver,
       conditionMakerVaultUnsafe: conditionMakerVaultUnsafe,
-      connectGelatoDebtBridgeFromMaker: connectGelatoDebtBridgeFromMaker,
+      connectGelatoFullDebtBridgeFromMaker: connectGelatoFullDebtBridgeFromMaker,
       connectGelatoProviderPayment: connectGelatoProviderPayment,
       priceOracleResolver: priceOracleResolver,
       dsaProviderModule: dsaProviderModule,
@@ -299,7 +299,7 @@ class Helper {
 
     await contracts.instaConnectors
       .connect(contracts.instaMaster)
-      .enable(contracts.connectGelatoDebtBridgeFromMaker.address);
+      .enable(contracts.connectGelatoFullDebtBridgeFromMaker.address);
 
     await contracts.instaConnectors
       .connect(contracts.instaMaster)
@@ -312,7 +312,7 @@ class Helper {
 
     expect(
       await contracts.instaConnectors.isConnector([
-        contracts.connectGelatoDebtBridgeFromMaker.address,
+        contracts.connectGelatoFullDebtBridgeFromMaker.address,
       ])
     ).to.be.true;
     expect(
@@ -537,9 +537,9 @@ class Helper {
     let spells = [];
 
     const debtBridgeCalculationForFullRefinance = new GelatoCoreLib.Action({
-      addr: contracts.connectGelatoDebtBridgeFromMaker.address,
+      addr: contracts.connectGelatoFullDebtBridgeFromMaker.address,
       data: await hre.run("abi-encode-withselector", {
-        abi: ConnectGelatoDebtBridgeFromMakerABI,
+        abi: ConnectGelatoFullDebtBridgeFromMakerABI,
         functionname: "saveFullRefinanceDataToMemory",
         inputs: [vaultId, 0, 0],
       }),
@@ -589,7 +589,7 @@ class Helper {
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectCompound.abi,
         functionname: "deposit",
-        inputs: [ETH, 0, "603", 0],
+        inputs: [ETH, 0, "601", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
@@ -601,7 +601,7 @@ class Helper {
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectCompound.abi,
         functionname: "borrow",
-        inputs: [hre.network.config.DAI, 0, "604", 0],
+        inputs: [hre.network.config.DAI, 0, "602", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
@@ -625,7 +625,7 @@ class Helper {
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectGelatoProviderPaymentABI,
         functionname: "payProvider",
-        inputs: [wallets.providerAddress, ETH, 0, "605", 0],
+        inputs: [wallets.providerAddress, ETH, 0, "603", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
@@ -634,7 +634,7 @@ class Helper {
 
     const gasPriceCeil = ethers.constants.MaxUint256;
 
-    const connectGelatoDebtBridgeFromMakerTaskSpec = new GelatoCoreLib.TaskSpec(
+    const connectGelatoFullDebtBridgeFromMakerTaskSpec = new GelatoCoreLib.TaskSpec(
       {
         conditions: [contracts.conditionMakerVaultUnsafe.address],
         actions: spells,
@@ -645,7 +645,7 @@ class Helper {
     await expect(
       contracts.gelatoCore
         .connect(wallets.providerWallet)
-        .provideTaskSpecs([connectGelatoDebtBridgeFromMakerTaskSpec])
+        .provideTaskSpecs([connectGelatoFullDebtBridgeFromMakerTaskSpec])
     ).to.emit(contracts.gelatoCore, "LogTaskSpecProvided");
 
     expect(
@@ -653,7 +653,7 @@ class Helper {
         .connect(wallets.providerWallet)
         .isTaskSpecProvided(
           wallets.providerAddress,
-          connectGelatoDebtBridgeFromMakerTaskSpec
+          connectGelatoFullDebtBridgeFromMakerTaskSpec
         )
     ).to.be.equal("OK");
 
@@ -664,7 +664,7 @@ class Helper {
           wallets.providerAddress,
           await contracts.gelatoCore
             .connect(wallets.providerWallet)
-            .hashTaskSpec(connectGelatoDebtBridgeFromMakerTaskSpec)
+            .hashTaskSpec(connectGelatoFullDebtBridgeFromMakerTaskSpec)
         )
     ).to.be.equal(gasPriceCeil);
 
@@ -689,9 +689,9 @@ class Helper {
     const spells = [];
 
     const debtBridgeCalculationForFullRefinance = new GelatoCoreLib.Action({
-      addr: contracts.connectGelatoDebtBridgeFromMaker.address,
+      addr: contracts.connectGelatoFullDebtBridgeFromMaker.address,
       data: await hre.run("abi-encode-withselector", {
-        abi: ConnectGelatoDebtBridgeFromMakerABI,
+        abi: ConnectGelatoFullDebtBridgeFromMakerABI,
         functionname: "saveFullRefinanceDataToMemory",
         inputs: [vaultId, 0, 0],
       }),
@@ -753,7 +753,7 @@ class Helper {
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectMaker.abi,
         functionname: "deposit",
-        inputs: [0, 0, "603", 0],
+        inputs: [0, 0, "601", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
@@ -765,7 +765,7 @@ class Helper {
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectMaker.abi,
         functionname: "borrow",
-        inputs: [0, 0, "604", 0],
+        inputs: [0, 0, "602", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
@@ -789,7 +789,7 @@ class Helper {
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectGelatoProviderPaymentABI,
         functionname: "payProvider",
-        inputs: [wallets.providerAddress, ETH, 0, "605", 0],
+        inputs: [wallets.providerAddress, ETH, 0, "603", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
@@ -798,7 +798,7 @@ class Helper {
 
     const gasPriceCeil = ethers.constants.MaxUint256;
 
-    const connectGelatoDebtBridgeFromMakerTaskSpec = new GelatoCoreLib.TaskSpec(
+    const connectGelatoFullDebtBridgeFromMakerTaskSpec = new GelatoCoreLib.TaskSpec(
       {
         conditions: [contracts.conditionMakerVaultUnsafe.address],
         actions: spells,
@@ -809,7 +809,7 @@ class Helper {
     await expect(
       contracts.gelatoCore
         .connect(wallets.providerWallet)
-        .provideTaskSpecs([connectGelatoDebtBridgeFromMakerTaskSpec])
+        .provideTaskSpecs([connectGelatoFullDebtBridgeFromMakerTaskSpec])
     ).to.emit(contracts.gelatoCore, "LogTaskSpecProvided");
 
     expect(
@@ -817,7 +817,7 @@ class Helper {
         .connect(wallets.providerWallet)
         .isTaskSpecProvided(
           wallets.providerAddress,
-          connectGelatoDebtBridgeFromMakerTaskSpec
+          connectGelatoFullDebtBridgeFromMakerTaskSpec
         )
     ).to.be.equal("OK");
 
@@ -828,7 +828,7 @@ class Helper {
           wallets.providerAddress,
           await contracts.gelatoCore
             .connect(wallets.providerWallet)
-            .hashTaskSpec(connectGelatoDebtBridgeFromMakerTaskSpec)
+            .hashTaskSpec(connectGelatoFullDebtBridgeFromMakerTaskSpec)
         )
     ).to.be.equal(gasPriceCeil);
 

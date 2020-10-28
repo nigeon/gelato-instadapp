@@ -240,19 +240,6 @@ abstract contract GelatoHelpers is Helpers {
 }
 
 abstract contract MakerResolver is GelatoHelpers {
-    function _getVaultData(ManagerLike cdpManager, uint256 vault)
-        internal
-        view
-        returns (bytes32 ilk, address urn)
-    {
-        ilk = cdpManager.ilks(vault);
-        urn = cdpManager.urns(vault);
-    }
-
-    function _getManager() internal pure returns (ManagerLike) {
-        return ManagerLike(getMcdManager());
-    }
-
     function getMakerVaultDebt(uint256 _vaultId)
         public
         view
@@ -285,16 +272,30 @@ abstract contract MakerResolver is GelatoHelpers {
 
         return ink;
     }
+
+    function _getVaultData(ManagerLike cdpManager, uint256 vault)
+        internal
+        view
+        returns (bytes32 ilk, address urn)
+    {
+        ilk = cdpManager.ilks(vault);
+        urn = cdpManager.urns(vault);
+    }
+
+    function _getManager() internal pure returns (ManagerLike) {
+        return ManagerLike(getMcdManager());
+    }
 }
 
-/// @title ConnectGelatoDebtBridgeFromMaker
-/// @notice InstaDapp connector for full or partial refinancing of Maker debt positions.
+/// @title ConnectGelatoPartialDebtBridgeFromMaker
+/// @notice InstaDapp connector for partial refinancing of Maker debt positions.
 /// @author Gelato Team
-contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
+contract ConnectGelatoPartialDebtBridgeFromMaker is MakerResolver {
     using GelatoBytes for bytes;
 
-    // solhint-disable-next-line const-name-snakecase
-    string public constant override name = "GelatoDebtBridge-v1.0";
+    string
+        public constant
+        override name = "ConnectGelatoPartialDebtBridgeFromMaker-v1.0"; // solhint-disable-line const-name-snakecase
     uint256 public constant GAS_COST = 1933090 + (19331 * 2); // 1933080 + ~2% (Estimated Value)
 
     constructor(uint256 _id) {
@@ -333,39 +334,13 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
             _oraclePayload
         );
 
-        _setInstaMemoryUints(
-            wDaiDebtToMove,
-            _sub(wColToWithdrawFromMaker, gasFeesPaidFromCol), // _wColToDepositInB
-            wDaiDebtToMove,
-            gasFeesPaidFromCol
-        );
-
         // For partial refinance we need to store exact values (no uint(-1) functionality)
+        setUint(600, wDaiDebtToMove); // borrow flashloan
         setUint(601, wDaiDebtToMove); // payback maker
         setUint(602, wColToWithdrawFromMaker); // withdraw maker
-    }
-
-    /// @notice Stores payload for full refinancing from a Maker position in InstaMemory.
-    /// @param _vaultID The ID of the makerDAO vault.
-    // @param _getID Id for writting in instaMemory.
-    // @param _setID Id for loading from instaMemory.
-    function saveFullRefinanceDataToMemory(
-        uint256 _vaultID,
-        uint256, /*_getId,*/
-        uint256 /*_setId*/
-    ) public payable virtual {
-        uint256 wDaiDebtToMove = getMakerVaultDebt(_vaultID);
-        uint256 wColToWithdrawFromMaker = getMakerVaultCollateralBalance(
-            _vaultID
-        );
-        uint256 gasFeesPaidFromCol = _getGelatoProviderFees();
-
-        _setInstaMemoryUints(
-            _add(wDaiDebtToMove, 1), // 1 wei DAI buffer: MakerResolver debt inaccuracy
-            _sub(wColToWithdrawFromMaker, gasFeesPaidFromCol), // _wColToDepositInB
-            wDaiDebtToMove,
-            gasFeesPaidFromCol
-        );
+        setUint(603, _sub(wColToWithdrawFromMaker, gasFeesPaidFromCol)); // deposit B
+        setUint(604, wDaiDebtToMove); // borrow B
+        setUint(605, gasFeesPaidFromCol); // pay the provider
     }
 
     /// @notice Computes values needed for DebtBridge Maker->ProtocolB
@@ -407,7 +382,7 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
 
             if (!success) {
                 returndata.revertWithErrorString(
-                    "ConnectGelatoDebtBridgeFromMaker.computeDebtBridge:oracle:"
+                    "ConnectGelatoPartialDebtBridgeFromMaker.computeDebtBridge:oracle:"
                 );
             }
 
@@ -505,22 +480,6 @@ contract ConnectGelatoDebtBridgeFromMaker is MakerResolver {
                     )
                 )
             );
-    }
-
-    // _gasFeesPaidFromCol == _wColToWithdrawFromMaker - _wColToDepositInB
-    function _setInstaMemoryUints(
-        uint256 _wDaiToBorrowFromInstaPool,
-        uint256 _wColToDepositInB,
-        uint256 _wDaiDebtToMove,
-        uint256 _gasFeesPaidFromCol
-    ) internal virtual {
-        setUint(600, _wDaiToBorrowFromInstaPool); // borrow flashloan
-        // For full refinance we do NOT need to store exact values: uint(-1) functionality
-        // setUint(601, wDaiDebtToMove); // for partialRefinancing: payback maker
-        // setUint(602, wColToWithdrawFromMaker); // for partialRefinancing: withdraw maker
-        setUint(603, _wColToDepositInB); // deposit B
-        setUint(604, _wDaiDebtToMove); // borrow B
-        setUint(605, _gasFeesPaidFromCol); // pay the provider
     }
 
     function _getGelatoProviderFees()

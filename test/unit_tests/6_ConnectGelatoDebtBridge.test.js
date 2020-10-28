@@ -23,15 +23,15 @@ describe("Gelato Debt Bridge Connector Unit Test", function () {
     process.exit(1);
   }
 
-  let connectGelatoDebtBridgeFromMaker;
+  let connectGelatoPartialDebtBridgeFromMaker;
   before(async function () {
-    const ConnectGelatoDebtBridgeFromMaker = await ethers.getContractFactory(
-      "ConnectGelatoDebtBridgeFromMaker"
+    const ConnectGelatoPartialDebtBridgeFromMaker = await ethers.getContractFactory(
+      "ConnectGelatoPartialDebtBridgeFromMaker"
     );
-    connectGelatoDebtBridgeFromMaker = await ConnectGelatoDebtBridgeFromMaker.deploy(
+    connectGelatoPartialDebtBridgeFromMaker = await ConnectGelatoPartialDebtBridgeFromMaker.deploy(
       0
     );
-    connectGelatoDebtBridgeFromMaker.deployed();
+    connectGelatoPartialDebtBridgeFromMaker.deployed();
   });
 
   it("#1: wCalcCollateralToWithdraw should return the amount of collateral to withdraw on protocol 1 and to put on protocol 2", async function () {
@@ -73,7 +73,7 @@ describe("Gelato Debt Bridge Connector Unit Test", function () {
     //#endregion
 
     expect(
-      await connectGelatoDebtBridgeFromMaker.wCalcCollateralToWithdraw(
+      await connectGelatoPartialDebtBridgeFromMaker.wCalcCollateralToWithdraw(
         minColRatioOnMaker,
         minColRatioOnPositionB,
         collateralPrice,
@@ -123,7 +123,7 @@ describe("Gelato Debt Bridge Connector Unit Test", function () {
     //#endregion
 
     expect(
-      await connectGelatoDebtBridgeFromMaker.wCalcDebtToRepay(
+      await connectGelatoPartialDebtBridgeFromMaker.wCalcDebtToRepay(
         minColRatioOnMaker,
         minColRatioOnPositionB,
         collateral,
