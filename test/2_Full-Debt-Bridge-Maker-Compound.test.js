@@ -3,8 +3,7 @@ const hre = require("hardhat");
 const {ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
-const Helper = require("./helpers/Full-Refinance-External-Provider.helper");
-const helper = new Helper();
+const makerToCompoundSetup = require("./helpers/Full-Refinance-External-Provider-Maker-To-Compound.helper");
 
 // This test showcases how to submit a task refinancing a Users debt position from
 // Maker to Compound using Gelato
@@ -30,15 +29,13 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
   let taskReceipt;
 
   before(async function () {
-    const result = await helper.makerToCompoundTestSetup();
-
+    const result = await makerToCompoundSetup();
     wallets = result.wallets;
     contracts = result.contracts;
     vaultId = result.vaultId;
     gelatoDebtBridgeSpells = result.spells;
-
-    ABI = await helper.getABI();
-    constants = await helper.getConstants();
+    ABI = result.ABI;
+    constants = result.constants;
   });
 
   it("#1: DSA give Authorization to Gelato to execute action his behalf.", async function () {
@@ -102,7 +99,6 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
     });
 
     const expiryDate = 0;
-
     await expect(
       contracts.dsa.cast(
         [contracts.connectGelato.address], // targets
@@ -184,13 +180,13 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
     //#region EXPECTED OUTCOME
 
     const gasFeesPaidFromCol = ethers.utils
-      .parseUnits(String(1933090 + 19331 * 2), 0)
+      .parseUnits(String(1490779 + 14908 * 2), 0)
       .mul(gelatoGasPrice);
-    const debtOnMakerBefore = await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerBefore = await contracts.debtBridgeFromMaker.getMakerVaultDebt(
       vaultId
     );
     const pricedCollateral = (
-      await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+      await contracts.debtBridgeFromMaker.getMakerVaultCollateralBalance(
         vaultId
       )
     ).sub(gasFeesPaidFromCol);
@@ -206,8 +202,8 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
     ).to.emit(contracts.gelatoCore, "LogExecSuccess");
 
     // 🚧 For Debugging:
-    // const txResponse2 = await gelatoCore
-    //   .connect(address.executorWallet)
+    // const txResponse2 = await contracts.gelatoCore
+    //   .connect(wallets.executorWallet)
     //   .exec(taskReceipt, {
     //     gasPrice: gelatoGasPrice,
     //     gasLimit: constants.GAS_LIMIT,
@@ -250,10 +246,10 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
       )
     ).to.be.lt(ethers.utils.parseUnits("1", 12));
 
-    const debtOnMakerAfter = await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerAfter = await contracts.debtBridgeFromMaker.getMakerVaultDebt(
       vaultId
     );
-    const collateralOnMakerAfter = await contracts.connectGelatoFullDebtBridgeFromMaker.getMakerVaultCollateralBalance(
+    const collateralOnMakerAfter = await contracts.debtBridgeFromMaker.getMakerVaultCollateralBalance(
       vaultId
     ); // in Ether.
 

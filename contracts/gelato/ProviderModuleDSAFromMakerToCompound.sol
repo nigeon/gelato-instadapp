@@ -10,13 +10,16 @@ import {
 } from "@gelatonetwork/core/contracts/gelato_core/interfaces/IGelatoCore.sol";
 import {AccountInterface} from "../interfaces/InstaDapp.sol";
 import {
-    ConnectGelatoProviderPayment
-} from "../connectors/ConnectGelatoProviderPayment.sol";
+    DebtBridgeFromMakerForFullRefinance
+} from "../gelato/DebtBridgeFromMakerForFullRefinance.sol";
+import {
+    ConnectGelatoDebtBridge
+} from "../connectors/ConnectGelatoDebtBridge.sol";
 
 /// @notice Gelato Provider Module for the InstaDapp DSA
 /// @dev Used by Provider to sanity check any third-party Tasks they pay for
 /// @author Gelato Network Team
-contract ProviderModuleDSA is GelatoProviderModuleStandard {
+contract ProviderModuleDSAFromMakerToCompound is GelatoProviderModuleStandard {
     /// @dev DSA must have gelatoCore as auth and gelatoCore is emitted as origin of cast
     address public immutable gelatoCore;
 
@@ -77,16 +80,15 @@ contract ProviderModuleDSA is GelatoProviderModuleStandard {
         Task calldata _task,
         uint256
     ) public view virtual override returns (bytes memory, bool) {
+        require(
+            _task.actions.length == 1,
+            "ProviderModuleDSAFromMakerToCompound.execPayload: Task should 1 action."
+        );
         address[] memory targets = new address[](_task.actions.length);
-        for (uint256 i = 0; i < _task.actions.length; i++)
-            targets[i] = _task.actions[i].addr;
+        targets[0] = _task.actions[0].addr;
 
         bytes[] memory datas = new bytes[](_task.actions.length);
-        for (uint256 i = 0; i < _task.actions.length; i++) {
-            if (_task.actions[i].addr == connectGelatoProviderPayment)
-                datas[i] = _replaceProvider(_provider, _task.actions[i].data);
-            else datas[i] = _task.actions[i].data;
-        }
+        datas[0] = _replaceProvider(_provider, _task.actions[0].data);
 
         return (
             abi.encodeWithSelector(
@@ -104,16 +106,24 @@ contract ProviderModuleDSA is GelatoProviderModuleStandard {
         pure
         returns (bytes memory)
     {
-        (, address token, uint256 amt, uint256 getID, uint256 setID) = abi
-            .decode(_data[4:], (address, address, uint256, uint256, uint256));
+        (address target, ) = abi.decode(_data[4:], (address, bytes));
+
+        (uint256 vaultId, address token, ) = abi.decode(
+            _data[104:],
+            (uint256, address, address)
+        );
         return
             abi.encodeWithSelector(
-                ConnectGelatoProviderPayment.payProvider.selector,
-                _provider,
-                token,
-                amt,
-                getID,
-                setID
+                ConnectGelatoDebtBridge.computeRefinanceDataAndCast.selector,
+                target,
+                abi.encodeWithSelector(
+                    DebtBridgeFromMakerForFullRefinance
+                        .execPayloadForFullRefinanceFromMakerToCompound
+                        .selector,
+                    vaultId,
+                    token,
+                    _provider
+                )
             );
     }
 }

@@ -16,22 +16,20 @@ let wmul = (x, y) => {
 
 //#endregion
 
-describe("Gelato Debt Bridge Connector Unit Test", function () {
+describe("Debt Partial Refinance Math Unit Test", function () {
   this.timeout(0);
   if (hre.network.name !== "hardhat") {
     console.error("Test Suite is meant to be run on hardhat only");
     process.exit(1);
   }
 
-  let connectGelatoPartialDebtBridgeFromMaker;
+  let debtRefinanceMath;
   before(async function () {
-    const ConnectGelatoPartialDebtBridgeFromMaker = await ethers.getContractFactory(
-      "ConnectGelatoPartialDebtBridgeFromMaker"
+    const DebtRefinanceMath = await ethers.getContractFactory(
+      "DebtRefinanceMath"
     );
-    connectGelatoPartialDebtBridgeFromMaker = await ConnectGelatoPartialDebtBridgeFromMaker.deploy(
-      0
-    );
-    connectGelatoPartialDebtBridgeFromMaker.deployed();
+    debtRefinanceMath = await DebtRefinanceMath.deploy();
+    debtRefinanceMath.deployed();
   });
 
   it("#1: wCalcCollateralToWithdraw should return the amount of collateral to withdraw on protocol 1 and to put on protocol 2", async function () {
@@ -73,7 +71,7 @@ describe("Gelato Debt Bridge Connector Unit Test", function () {
     //#endregion
 
     expect(
-      await connectGelatoPartialDebtBridgeFromMaker.wCalcCollateralToWithdraw(
+      await debtRefinanceMath.wCalcCollateralToWithdraw(
         minColRatioOnMaker,
         minColRatioOnPositionB,
         collateralPrice,
@@ -123,7 +121,7 @@ describe("Gelato Debt Bridge Connector Unit Test", function () {
     //#endregion
 
     expect(
-      await connectGelatoPartialDebtBridgeFromMaker.wCalcDebtToRepay(
+      await debtRefinanceMath.wCalcDebtToRepay(
         minColRatioOnMaker,
         minColRatioOnPositionB,
         collateral,
