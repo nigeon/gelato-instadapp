@@ -10,9 +10,8 @@ import {
 } from "@gelatonetwork/core/contracts/gelato_core/interfaces/IGelatoCore.sol";
 import {AccountInterface} from "../../../interfaces/InstaDapp/IInstaDapp.sol";
 import {
-    DebtBridgeFromMakerForFullRefinance
-} from "../../gelato/data_generators/DebtBridgeFromMakerForFullRefinance.sol";
-import {ConnectGelatoData} from "../../connectors/ConnectGelatoData.sol";
+    ConnectGelatoDataForFullRefinance
+} from "../../connectors/ConnectGelatoDataForFullRefinance.sol";
 
 /// @notice Gelato Provider Module for the InstaDapp DSA
 /// @dev Used by Provider to sanity check any third-party Tasks they pay for
@@ -110,26 +109,19 @@ contract ProviderModuleDsaFromMakerToMaker is GelatoProviderModuleStandard {
         pure
         returns (bytes memory)
     {
-        address target = abi.decode(_data[4:36], (address));
-
         (uint256 vaultId, address token, string memory colType, ) = abi.decode(
-            _data[104:],
+            _data[4:],
             (uint256, address, string, address)
         );
-
         return
             abi.encodeWithSelector(
-                ConnectGelatoData.getDataAndCast.selector,
-                target,
-                abi.encodeWithSelector(
-                    DebtBridgeFromMakerForFullRefinance
-                        .execPayloadForFullRefinanceFromMakerToMaker
-                        .selector,
-                    vaultId,
-                    token,
-                    colType,
-                    _provider
-                )
+                ConnectGelatoDataForFullRefinance
+                    .getDataAndCastForFromMakerToMaker
+                    .selector,
+                vaultId,
+                token,
+                colType,
+                _provider
             );
     }
 }

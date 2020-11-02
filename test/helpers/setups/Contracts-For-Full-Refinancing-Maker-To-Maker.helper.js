@@ -4,26 +4,18 @@ const {ethers} = hre;
 const getContracts = require("./Common-Contracts.helper");
 
 async function getAllContracts() {
-  let connectGelatoData;
-  let debtBridgeFromMakerForFullRefinance;
   let dsaProviderModule;
+  let connectGelatoData;
   let contracts = await getContracts();
 
   const ConnectGelatoData = await ethers.getContractFactory(
-    "ConnectGelatoData"
+    "ConnectGelatoDataForFullRefinance"
   );
   connectGelatoData = await ConnectGelatoData.deploy(
-    (await contracts.instaConnectors.connectorLength()).add(1)
-  );
-  await connectGelatoData.deployed();
-
-  const DebtBridgeFromMakerForFullRefinance = await ethers.getContractFactory(
-    "DebtBridgeFromMakerForFullRefinance"
-  );
-  debtBridgeFromMakerForFullRefinance = await DebtBridgeFromMakerForFullRefinance.deploy(
+    (await contracts.instaConnectors.connectorLength()).add(1),
     contracts.connectGelatoProviderPayment.address
   );
-  await debtBridgeFromMakerForFullRefinance.deployed();
+  await connectGelatoData.deployed();
 
   const ProviderModuleDsa = await ethers.getContractFactory(
     "ProviderModuleDsaFromMakerToMaker"
@@ -34,9 +26,8 @@ async function getAllContracts() {
   );
   await dsaProviderModule.deployed();
 
-  contracts.connectGelatoData = connectGelatoData;
-  contracts.debtBridgeFromMakerForFullRefinance = debtBridgeFromMakerForFullRefinance;
   contracts.dsaProviderModule = dsaProviderModule;
+  contracts.connectGelatoData = connectGelatoData;
 
   return contracts;
 }

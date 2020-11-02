@@ -2,53 +2,122 @@
 pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
 
-import {sub} from "../../../vendor/DSMath.sol";
+import {GelatoBytes} from "../../lib/GelatoBytes.sol";
+import {sub} from "../../vendor/DSMath.sol";
 import {
-    _getMakerVaultDebt,
-    _getMakerVaultCollateralBalance
-} from "../../../functions/dapps/FMaker.sol";
+    AccountInterface,
+    ConnectorInterface
+} from "../../interfaces/InstaDapp/IInstaDapp.sol";
+import {
+    IConnectInstaPoolV2
+} from "../../interfaces/InstaDapp/connectors/IConnectInstaPoolV2.sol";
 import {
     DAI,
     CONNECT_MAKER,
     CONNECT_COMPOUND,
     INSTA_POOL_V2
-} from "../../../constants/CInstaDapp.sol";
+} from "../../constants/CInstaDapp.sol";
+import {
+    _getMakerVaultDebt,
+    _getMakerVaultCollateralBalance
+} from "../../functions/dapps/FMaker.sol";
+import {
+    _encodeFlashPayback
+} from "../../functions/InstaDapp/connectors/FInstaPoolV2.sol";
 import {
     _encodePaybackMakerVault,
     _encodedWithdrawMakerVault,
     _encodeOpenMakerVault,
     _encodedDepositMakerVault,
     _encodeBorrowDaiMakerVault
-} from "../../../functions/InstaDapp/connectors/FConnectMaker.sol";
+} from "../../functions/InstaDapp/connectors/FConnectMaker.sol";
+import {
+    _encodePayGelatoProvider
+} from "../../functions/InstaDapp/connectors/FConnectGelatoProviderPayment.sol";
 import {
     _encodeDepositCompound,
     _encodeBorrowCompound
-} from "../../../functions/InstaDapp/connectors/FConnectCompound.sol";
-import {
-    _encodePayGelatoProvider
-} from "../../../functions/InstaDapp/connectors/FConnectGelatoProviderPayment.sol";
-import {
-    _encodeFlashPayback
-} from "../../../functions/InstaDapp/connectors/FInstaPoolV2.sol";
-import {_getGelatoProviderFees} from "../../../functions/gelato/FGelato.sol";
-import {
-    IConnectInstaPoolV2
-} from "../../../interfaces/InstaDapp/connectors/IConnectInstaPoolV2.sol";
+} from "../../functions/InstaDapp/connectors/FConnectCompound.sol";
+import {_getGelatoProviderFees} from "../../functions/gelato/FGelato.sol";
 
-/// @title DebtBridgeFromMakerForFullRefinance
-/// @notice Task Generator contract that generate task for a full refinancing from maker protocol to another protocol (can be Maker).
-/// @author Gelato Team
-contract DebtBridgeFromMakerForFullRefinance {
-    uint256 public constant GAS_COST = 1490779 + (14908 * 2); // 1933080 + ~2% (Estimated Value)
+contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
+    using GelatoBytes for bytes;
 
-    // To retrieve when the connector is deployed and replace with the address of the deployed instance
-    address public immutable connectGelatoProviderPayment;
+    // solhint-disable-next-line const-name-snakecase
+    string public constant override name = "ConnectGelatoData-v1.0";
+    uint256 internal immutable _id;
+    address internal immutable _connectGelatoProviderPayment;
 
-    constructor(address _connectGelatoProviderPayment) {
-        connectGelatoProviderPayment = _connectGelatoProviderPayment;
+    uint256 public constant GAS_COST = 1490779 + (14908 * 2); // 1490779 + ~2% (Estimated Value)
+
+    constructor(uint256 id, address connectGelatoProviderPayment) {
+        _id = id;
+        _connectGelatoProviderPayment = connectGelatoProviderPayment;
     }
 
-    /* solhint-disable function-max-lines */
+    /// @dev Connector Details
+    function connectorID()
+        public
+        view
+        override
+        returns (uint256 _type, uint256 id)
+    {
+        (_type, id) = (1, _id); // Should put specific value.
+    }
+
+    function getDataAndCastForFromMakerToMaker(
+        uint256 _vaultId,
+        address _token,
+        string memory _colType,
+        address _provider
+    ) public payable {
+        (
+            address[] memory targets,
+            bytes[] memory datas
+        ) = _execPayloadForFullRefinanceFromMakerToMaker(
+            _vaultId,
+            _token,
+            _colType,
+            _provider
+        );
+
+        _cast(targets, datas);
+    }
+
+    function getDataAndCastForFromMakerToCompound(
+        uint256 _vaultId,
+        address _token,
+        address _provider
+    ) public payable {
+        (
+            address[] memory targets,
+            bytes[] memory datas
+        ) = _execPayloadForFullRefinanceFromMakerToCompound(
+            _vaultId,
+            _token,
+            _provider
+        );
+
+        _cast(targets, datas);
+    }
+
+    function _cast(address[] memory targets, bytes[] memory datas) internal {
+        // Instapool V2 / FlashLoan call
+        bytes memory castData = abi.encodeWithSelector(
+            AccountInterface.cast.selector,
+            targets,
+            datas,
+            msg.sender // msg.sender == GelatoCore
+        );
+
+        (bool success, bytes memory returndata) = address(this).delegatecall(
+            castData
+        );
+        if (!success)
+            returndata.revertWithError(
+                "ConnectGelatoDataForFullRefinance._cast:"
+            );
+    }
 
     /// @notice Generate Task for a full refinancing between Maker to Compound.
     /// @param _vaultId Id of the unsafe vault of the client.
@@ -56,11 +125,11 @@ contract DebtBridgeFromMakerForFullRefinance {
     /// @param _provider address of the paying provider.
     /// @return targets : flashloan contract address
     /// @return datas : calldata for flashloan
-    function execPayloadForFullRefinanceFromMakerToCompound(
+    function _execPayloadForFullRefinanceFromMakerToCompound(
         uint256 _vaultId,
         address _token,
         address _provider
-    ) public view returns (address[] memory targets, bytes[] memory datas) {
+    ) internal view returns (address[] memory targets, bytes[] memory datas) {
         targets = new address[](1);
         targets[0] = INSTA_POOL_V2;
 
@@ -75,7 +144,7 @@ contract DebtBridgeFromMakerForFullRefinance {
         _targets[1] = CONNECT_MAKER; // withdraw
         _targets[2] = CONNECT_COMPOUND; // deposit
         _targets[3] = CONNECT_COMPOUND; // borrow
-        _targets[4] = connectGelatoProviderPayment;
+        _targets[4] = _connectGelatoProviderPayment;
         _targets[5] = INSTA_POOL_V2;
 
         bytes[] memory _datas = new bytes[](6);
@@ -114,12 +183,12 @@ contract DebtBridgeFromMakerForFullRefinance {
     /// @param _provider address of the paying provider.
     /// @return targets : flashloan contract address
     /// @return datas : calldata for flashloan
-    function execPayloadForFullRefinanceFromMakerToMaker(
+    function _execPayloadForFullRefinanceFromMakerToMaker(
         uint256 _vaultId,
         address _token,
         string memory _colType,
         address _provider
-    ) public view returns (address[] memory targets, bytes[] memory datas) {
+    ) internal view returns (address[] memory targets, bytes[] memory datas) {
         targets = new address[](1);
         targets[0] = INSTA_POOL_V2;
 
@@ -135,7 +204,7 @@ contract DebtBridgeFromMakerForFullRefinance {
         _targets[2] = CONNECT_MAKER; // open ETH-B vault
         _targets[3] = CONNECT_MAKER; // deposit
         _targets[4] = CONNECT_MAKER; // borrow
-        _targets[5] = connectGelatoProviderPayment;
+        _targets[5] = _connectGelatoProviderPayment;
         _targets[6] = targets[0];
 
         bytes[] memory _datas = new bytes[](7);
@@ -166,48 +235,5 @@ contract DebtBridgeFromMakerForFullRefinance {
             0,
             abi.encode(_targets, _datas)
         );
-    }
-
-    /* solhint-enable function-max-lines */
-
-    /// @notice Generate Data for calling execPayloadForFullRefinanceFromMakerToMaker via a static call.
-    /// @param _vaultId Id of the unsafe vault of the client.
-    /// @param _token  vault's col token address .
-    /// @param _colType colType of the new vault, exemple : ETH-B, ETH-A.
-    /// @param _provider address of the paying provider.
-    /// @return a call data for a static call of execPayloadForFullRefinanceFromMakerToMaker.
-    function getDebtBridgeFullRefinanceMakerToMakerData(
-        uint256 _vaultId,
-        address _token,
-        string memory _colType,
-        address _provider
-    ) public pure returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                this.execPayloadForFullRefinanceFromMakerToMaker.selector,
-                _vaultId,
-                _token,
-                _colType,
-                _provider
-            );
-    }
-
-    /// @notice Generate Data for calling execPayloadForFullRefinanceFromMakerToCompound via a static call.
-    /// @param _vaultId Id of the unsafe vault of the client.
-    /// @param _token  vault's col token address .
-    /// @param _provider address of the paying provider.
-    /// @return a call data for a static call of execPayloadForFullRefinanceFromMakerToMaker.
-    function getDebtBridgeFullRefinanceMakerToCompoundData(
-        uint256 _vaultId,
-        address _token,
-        address _provider
-    ) public pure returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                this.execPayloadForFullRefinanceFromMakerToCompound.selector,
-                _vaultId,
-                _token,
-                _provider
-            );
     }
 }

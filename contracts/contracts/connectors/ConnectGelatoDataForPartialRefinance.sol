@@ -2,50 +2,49 @@
 pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
 
-import {GelatoBytes} from "../../../lib/GelatoBytes.sol";
-import {sub, wmul} from "../../../vendor/DSMath.sol";
+import {GelatoBytes} from "../../lib/GelatoBytes.sol";
+import {sub, wmul} from "../../vendor/DSMath.sol";
 import {
-    _getMakerVaultDebt,
-    _getMakerVaultCollateralBalance
-} from "../../../functions/dapps/FMaker.sol";
+    AccountInterface,
+    ConnectorInterface
+} from "../../interfaces/InstaDapp/IInstaDapp.sol";
+import {
+    IConnectInstaPoolV2
+} from "../../interfaces/InstaDapp/connectors/IConnectInstaPoolV2.sol";
 import {
     DAI,
     CONNECT_MAKER,
     CONNECT_COMPOUND,
     INSTA_POOL_V2
-} from "../../../constants/CInstaDapp.sol";
+} from "../../constants/CInstaDapp.sol";
+import {
+    _getMakerVaultDebt,
+    _getMakerVaultCollateralBalance
+} from "../../functions/dapps/FMaker.sol";
+import {
+    _encodeFlashPayback
+} from "../../functions/InstaDapp/connectors/FInstaPoolV2.sol";
 import {
     _encodePaybackMakerVault,
     _encodedWithdrawMakerVault,
     _encodeOpenMakerVault,
     _encodedDepositMakerVault,
     _encodeBorrowDaiMakerVault
-} from "../../../functions/InstaDapp/connectors/FConnectMaker.sol";
+} from "../../functions/InstaDapp/connectors/FConnectMaker.sol";
+import {
+    _encodePayGelatoProvider
+} from "../../functions/InstaDapp/connectors/FConnectGelatoProviderPayment.sol";
 import {
     _encodeDepositCompound,
     _encodeBorrowCompound
-} from "../../../functions/InstaDapp/connectors/FConnectCompound.sol";
-import {
-    _encodePayGelatoProvider
-} from "../../../functions/InstaDapp/connectors/FConnectGelatoProviderPayment.sol";
-import {
-    _encodeFlashPayback
-} from "../../../functions/InstaDapp/connectors/FInstaPoolV2.sol";
-import {_getGelatoProviderFees} from "../../../functions/gelato/FGelato.sol";
+} from "../../functions/InstaDapp/connectors/FConnectCompound.sol";
+import {_getGelatoProviderFees} from "../../functions/gelato/FGelato.sol";
 import {
     _wCalcCollateralToWithdraw,
     _wCalcDebtToRepay
-} from "../../../functions/gelato/FGelatoDebtBridge.sol";
-import {
-    IConnectInstaPoolV2
-} from "../../../interfaces/InstaDapp/connectors/IConnectInstaPoolV2.sol";
+} from "../../functions/gelato/FGelatoDebtBridge.sol";
 
-/// @title DebtBridgeFromMakerForPartialRefinance
-/// @notice Task Generator contract that generate task for a full refinancing from maker protocol to another protocol (can be Maker).
-/// @author Gelato Team
-contract DebtBridgeFromMakerForPartialRefinance {
-    using GelatoBytes for bytes;
-
+contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
     struct PartialDebtBridgePayload {
         uint256 vaultId;
         address token;
@@ -56,16 +55,70 @@ contract DebtBridgeFromMakerForPartialRefinance {
         address provider;
     }
 
-    uint256 public constant GAS_COST = 1490779 + (14908 * 2); // 1933080 + ~2% (Estimated Value)
+    using GelatoBytes for bytes;
 
-    // To retrieve when the connector is deployed and replace with the address of the deployed instance
-    address public immutable connectGelatoProviderPayment;
+    // solhint-disable-next-line const-name-snakecase
+    string public constant override name = "ConnectGelatoData-v1.0";
+    uint256 internal immutable _id;
+    address internal immutable _connectGelatoProviderPayment;
 
-    constructor(address _connectGelatoProviderPayment) {
-        connectGelatoProviderPayment = _connectGelatoProviderPayment;
+    uint256 public constant GAS_COST = 1490779 + (14908 * 2); // 1490779 + ~2% (Estimated Value)
+
+    constructor(uint256 id, address connectGelatoProviderPayment) {
+        _id = id;
+        _connectGelatoProviderPayment = connectGelatoProviderPayment;
     }
 
-    /* solhint-disable function-max-lines */
+    /// @dev Connector Details
+    function connectorID()
+        public
+        view
+        override
+        returns (uint256 _type, uint256 id)
+    {
+        (_type, id) = (1, _id); // Should put specific value.
+    }
+
+    function getDataAndCastForFromMakerToMaker(
+        PartialDebtBridgePayload calldata _payload,
+        string memory _colType
+    ) public payable {
+        (
+            address[] memory targets,
+            bytes[] memory datas
+        ) = _execPayloadForPartialRefinanceFromMakerToMaker(_payload, _colType);
+
+        _cast(targets, datas);
+    }
+
+    function getDataAndCastForFromMakerToCompound(
+        PartialDebtBridgePayload calldata _payload
+    ) public payable {
+        (
+            address[] memory targets,
+            bytes[] memory datas
+        ) = _execPayloadForPartialRefinanceFromMakerToCompound(_payload);
+
+        _cast(targets, datas);
+    }
+
+    function _cast(address[] memory targets, bytes[] memory datas) internal {
+        // Instapool V2 / FlashLoan call
+        bytes memory castData = abi.encodeWithSelector(
+            AccountInterface.cast.selector,
+            targets,
+            datas,
+            msg.sender // msg.sender == GelatoCore
+        );
+
+        (bool success, bytes memory returndata) = address(this).delegatecall(
+            castData
+        );
+        if (!success)
+            returndata.revertWithError(
+                "ConnectGelatoDataForPartialRefinance._cast:"
+            );
+    }
 
     /// @notice Generate Task for a full refinancing between Maker to Compound.
     /// @param _payload contain :
@@ -80,9 +133,9 @@ contract DebtBridgeFromMakerForPartialRefinance {
     // @param _provider address of the paying provider.
     /// @return targets : flashloan contract address
     /// @return datas : calldata for flashloan
-    function execPayloadForPartialRefinanceFromMakerToCompound(
+    function _execPayloadForPartialRefinanceFromMakerToCompound(
         PartialDebtBridgePayload calldata _payload
-    ) public view returns (address[] memory targets, bytes[] memory datas) {
+    ) internal view returns (address[] memory targets, bytes[] memory datas) {
         targets = new address[](1);
         targets[0] = INSTA_POOL_V2;
 
@@ -90,7 +143,7 @@ contract DebtBridgeFromMakerForPartialRefinance {
             uint256 wDaiDebtToMove,
             uint256 wColToWithdrawFromMaker,
             uint256 gasFeesPaidFromCol
-        ) = computeDebtBridge(
+        ) = _computeDebtBridge(
             _payload.vaultId,
             _payload.wMinColRatioMaker,
             _payload.wMinColRatioB,
@@ -103,7 +156,7 @@ contract DebtBridgeFromMakerForPartialRefinance {
         _targets[1] = CONNECT_MAKER; // withdraw
         _targets[2] = CONNECT_COMPOUND; // deposit
         _targets[3] = CONNECT_COMPOUND; // borrow
-        _targets[4] = connectGelatoProviderPayment;
+        _targets[4] = _connectGelatoProviderPayment;
         _targets[5] = INSTA_POOL_V2;
 
         bytes[] memory _datas = new bytes[](6);
@@ -159,10 +212,10 @@ contract DebtBridgeFromMakerForPartialRefinance {
     /// @param _colType colType of the new vault, exemple : ETH-B, ETH-A.
     /// @return targets : flashloan contract address
     /// @return datas : calldata for flashloan
-    function execPayloadForPartialRefinanceFromMakerToMaker(
+    function _execPayloadForPartialRefinanceFromMakerToMaker(
         PartialDebtBridgePayload calldata _payload,
         string memory _colType
-    ) public view returns (address[] memory targets, bytes[] memory datas) {
+    ) internal view returns (address[] memory targets, bytes[] memory datas) {
         targets = new address[](1);
         targets[0] = INSTA_POOL_V2;
 
@@ -170,7 +223,7 @@ contract DebtBridgeFromMakerForPartialRefinance {
             uint256 wDaiDebtToMove,
             uint256 wColToWithdrawFromMaker,
             uint256 gasFeesPaidFromCol
-        ) = computeDebtBridge(
+        ) = _computeDebtBridge(
             _payload.vaultId,
             _payload.wMinColRatioMaker,
             _payload.wMinColRatioB,
@@ -184,7 +237,7 @@ contract DebtBridgeFromMakerForPartialRefinance {
         _targets[2] = CONNECT_MAKER; // open ETH-B vault
         _targets[3] = CONNECT_MAKER; // deposit
         _targets[4] = CONNECT_MAKER; // borrow
-        _targets[5] = connectGelatoProviderPayment;
+        _targets[5] = _connectGelatoProviderPayment;
         _targets[6] = INSTA_POOL_V2;
 
         bytes[] memory _datas = new bytes[](7);
@@ -227,8 +280,6 @@ contract DebtBridgeFromMakerForPartialRefinance {
         );
     }
 
-    /* solhint-enable function-max-lines */
-
     /// @notice Computes values needed for DebtBridge Maker->ProtocolB
     /// @dev Use wad for colRatios.
     /// @param _vaultId The id of the makerDAO vault.
@@ -242,16 +293,15 @@ contract DebtBridgeFromMakerForPartialRefinance {
     /// @return wColToWithdrawFromMaker (wad) to: withdraw from Maker and deposit on B.
     /// @return gasFeesPaidFromCol Gelato automation-gas-fees paid from user's collateral
     // solhint-disable function-max-lines
-    function computeDebtBridge(
+    function _computeDebtBridge(
         uint256 _vaultId,
         uint256 _wMinColRatioMaker,
         uint256 _wMinColRatioB,
         address _priceOracle,
         bytes calldata _oraclePayload
     )
-        public
+        internal
         view
-        virtual
         returns (
             uint256 wDaiDebtToMove,
             uint256 wColToWithdrawFromMaker,
@@ -267,7 +317,8 @@ contract DebtBridgeFromMakerForPartialRefinance {
             );
 
             if (!success) {
-                returndata.revertWithError(
+                GelatoBytes.revertWithError(
+                    returndata,
                     "ConnectGelatoPartialDebtBridgeFromMaker.computeDebtBridge:oracle:"
                 );
             }
@@ -286,7 +337,7 @@ contract DebtBridgeFromMakerForPartialRefinance {
 
         uint256 wDaiDebtOnMaker = _getMakerVaultDebt(_vaultId);
 
-        wColToWithdrawFromMaker = wCalcCollateralToWithdraw(
+        wColToWithdrawFromMaker = _wCalcCollateralToWithdraw(
             _wMinColRatioMaker,
             _wMinColRatioB,
             wColPrice,
@@ -294,131 +345,11 @@ contract DebtBridgeFromMakerForPartialRefinance {
             wDaiDebtOnMaker
         );
 
-        wDaiDebtToMove = wCalcDebtToRepay(
+        wDaiDebtToMove = _wCalcDebtToRepay(
             _wMinColRatioMaker,
             _wMinColRatioB,
             wPricedCol,
             wDaiDebtOnMaker
         );
-    }
-
-    /// @notice Compute collateral (wad) to move from Maker to B.
-    /// @dev Convenience API for frontends - check _wCalcDebtToRepay for implementation
-    /// @param _wMinColRatioMaker Min col ratio (wad) on Maker debt position
-    /// @param _wMinColRatioB Min col ratio (wad) on debt position B (e.g. Compound, Maker, ...)
-    /// @param _wColPrice Price of the collateral (wad) in oracle price units.
-    /// @param _wPricedCol Collateral to move (wad) valued in oracle price.
-    /// @param _wDaiDebtOnMaker Amount of DAI (wad) borrowed from Maker.
-    /// @return collateral to withdraw from A in wad
-    function wCalcCollateralToWithdraw(
-        uint256 _wMinColRatioMaker,
-        uint256 _wMinColRatioB,
-        uint256 _wColPrice,
-        uint256 _wPricedCol,
-        uint256 _wDaiDebtOnMaker
-    ) public pure virtual returns (uint256) {
-        return
-            _wCalcCollateralToWithdraw(
-                _wMinColRatioMaker,
-                _wMinColRatioB,
-                _wColPrice,
-                _wPricedCol,
-                _wDaiDebtOnMaker
-            );
-    }
-
-    /// @notice Compute debt (wad) to flashBorrow->repay Maker->withdraw from B->flashPayback
-    /// @dev Convenience API for frontends - check _wCalcDebtToRepay for implementation.
-    /// @param _wMinColRatioMaker Min col ratio (wad) on Maker debt position
-    /// @param _wMinColRatioB Min col ratio (wad) on debt position B (e.g. Compound, Maker, ...)
-    /// @param _wPricedCol Collateral to move (wad) valued in oracle price.
-    /// @param _wDaiDebtOnMaker Amount of DAI (wad) borrowed from Maker.
-    /// @return amount of borrowed token to pay back in wad
-    function wCalcDebtToRepay(
-        uint256 _wMinColRatioMaker,
-        uint256 _wMinColRatioB,
-        uint256 _wPricedCol,
-        uint256 _wDaiDebtOnMaker
-    ) public pure virtual returns (uint256) {
-        return
-            _wCalcDebtToRepay(
-                _wMinColRatioMaker,
-                _wMinColRatioB,
-                _wPricedCol,
-                _wDaiDebtOnMaker
-            );
-    }
-
-    /// @notice Generate Data for calling execPayloadForPartialRefinanceFromMakerToMaker via a static call.
-    /// @param _vaultId Id of the unsafe vault of the client.
-    /// @param _token  vault's col token address .
-    /// @param _wMinColRatioMaker Min col ratio (wad) on Maker debt position
-    /// @param _wMinColRatioB Min col ratio (wad) on debt position B (e.g. Compound, Maker, ...)
-    /// @param _priceOracle The price oracle contract to supply the collateral price
-    ///  e.g. Maker's ETH/USD oracle for ETH collateral pricing.
-    /// @param _oraclePayload The data for making the staticcall to the oracle's read
-    ///  method e.g. the function selector of MakerOracle's read function.
-    /// @param _colType colType of the new vault, exemple : ETH-B, ETH-A.
-    /// @param _provider address of the paying provider.
-    /// @return payload for execPayloadForPartialRefinanceFromMakerToMaker.
-    function getDebtBridgePartialRefinanceMakerToMakerData(
-        uint256 _vaultId,
-        address _token,
-        uint256 _wMinColRatioMaker,
-        uint256 _wMinColRatioB,
-        address _priceOracle,
-        bytes calldata _oraclePayload,
-        string memory _colType,
-        address _provider
-    ) public pure returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                this.execPayloadForPartialRefinanceFromMakerToMaker.selector,
-                PartialDebtBridgePayload({
-                    vaultId: _vaultId,
-                    token: _token,
-                    wMinColRatioMaker: _wMinColRatioMaker,
-                    wMinColRatioB: _wMinColRatioB,
-                    priceOracle: _priceOracle,
-                    oraclePayload: _oraclePayload,
-                    provider: _provider
-                }),
-                _colType
-            );
-    }
-
-    /// @notice Generate Data for calling execPayloadForPartialRefinanceFromMakerToCompound via a static call.
-    /// @param _vaultId Id of the unsafe vault of the client.
-    /// @param _token  vault's col token address .
-    /// @param _wMinColRatioMaker Min col ratio (wad) on Maker debt position
-    /// @param _wMinColRatioB Min col ratio (wad) on debt position B (e.g. Compound, Maker, ...)
-    /// @param _priceOracle The price oracle contract to supply the collateral price
-    ///  e.g. Maker's ETH/USD oracle for ETH collateral pricing.
-    /// @param _oraclePayload The data for making the staticcall to the oracle's read
-    ///  method e.g. the function selector of MakerOracle's read function.
-    /// @param _provider address of the paying provider.
-    /// @return a call data for a static call of execPayloadForPartialRefinanceFromMakerToMaker.
-    function getDebtBridgePartialRefinanceMakerToCompoundData(
-        uint256 _vaultId,
-        address _token,
-        uint256 _wMinColRatioMaker,
-        uint256 _wMinColRatioB,
-        address _priceOracle,
-        bytes calldata _oraclePayload,
-        address _provider
-    ) public pure returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                this.execPayloadForPartialRefinanceFromMakerToCompound.selector,
-                PartialDebtBridgePayload({
-                    vaultId: _vaultId,
-                    token: _token,
-                    wMinColRatioMaker: _wMinColRatioMaker,
-                    wMinColRatioB: _wMinColRatioB,
-                    priceOracle: _priceOracle,
-                    oraclePayload: _oraclePayload,
-                    provider: _provider
-                })
-            );
     }
 }
