@@ -10,10 +10,10 @@
     "compile": "npx hardhat compile",
     "format": "prettier --write .",
     "lint": "eslint --cache . && yarn lint:sol",
-    "lint:sol": "solhint contracts/**/*.sol",
+    "lint:sol": "solhint contracts/**/**/**/**/**/**/**/*.sol",
     "lint:fix": "eslint --cache --fix . && solhint --fix contracts/**/*.sol",
-    "test": "yarn compile --force && npx hardhat test",
-    "debug": "DEBUG=true yarn compile --force && npx hardhat test"
+    "test": "yarn compile && npx hardhat test",
+    "debug": "DEBUG=true yarn compile && npx hardhat test"
   },
   "devDependencies": {
     "@gelatonetwork/core": "1.0.0",

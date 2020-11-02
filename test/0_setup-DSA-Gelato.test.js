@@ -16,7 +16,7 @@ const InstaConnectors = require("../pre-compiles/InstaConnectors.json");
 const InstaAccount = require("../pre-compiles/InstaAccount.json");
 const ConnectAuth = require("../pre-compiles/ConnectAuth.json");
 const ConnectBasic = require("../pre-compiles/ConnectBasic.json");
-const ProviderModuleDSA_ABI = require("../pre-compiles/ProviderModuleDSA_ABI.json");
+const ProviderModuleDsa_ABI = require("../pre-compiles/ProviderModuleDsa_ABI.json");
 
 describe("DSA setup with Gelato Tests", function () {
   this.timeout(50000);
@@ -89,8 +89,8 @@ describe("DSA setup with Gelato Tests", function () {
       hre.network.config.GelatoCore
     );
     providerModuleDSA = await ethers.getContractAt(
-      ProviderModuleDSA_ABI,
-      hre.network.config.ProviderModuleDSA
+      ProviderModuleDsa_ABI,
+      hre.network.config.ProviderModuleDsa
     );
   });
 
@@ -183,7 +183,7 @@ describe("DSA setup with Gelato Tests", function () {
     ).to.be.true;
   });
 
-  it("#6: Gelato ProviderModuleDSA returns correct execPayload", async function () {
+  it("#6: Gelato ProviderModuleDsa returns correct execPayload", async function () {
     // Deposit 1 ETH into DSA
     await userWallet.sendTransaction({
       to: dsaAddress,

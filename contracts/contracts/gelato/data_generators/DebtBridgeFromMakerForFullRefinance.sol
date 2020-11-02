@@ -42,11 +42,13 @@ contract DebtBridgeFromMakerForFullRefinance {
     uint256 public constant GAS_COST = 1490779 + (14908 * 2); // 1933080 + ~2% (Estimated Value)
 
     // To retrieve when the connector is deployed and replace with the address of the deployed instance
-    address public connectGelatoProviderPayment;
+    address public immutable connectGelatoProviderPayment;
 
     constructor(address _connectGelatoProviderPayment) {
         connectGelatoProviderPayment = _connectGelatoProviderPayment;
     }
+
+    /* solhint-disable function-max-lines */
 
     /// @notice Generate Task for a full refinancing between Maker to Compound.
     /// @param _vaultId Id of the unsafe vault of the client.
@@ -165,6 +167,8 @@ contract DebtBridgeFromMakerForFullRefinance {
             abi.encode(_targets, _datas)
         );
     }
+
+    /* solhint-enable function-max-lines */
 
     /// @notice Generate Data for calling execPayloadForFullRefinanceFromMakerToMaker via a static call.
     /// @param _vaultId Id of the unsafe vault of the client.

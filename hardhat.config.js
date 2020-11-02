@@ -51,12 +51,14 @@ module.exports = {
       CETH: "0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5",
       DssCdpManager: "0x5ef30b9986345249bc32d8928B7ee64DE9435E39",
       GetCdps: "0x36a724Bd100c39f0Ea4D3A20F7097eE01A8Ff573",
-      ProviderModuleDSA: "0x0C25452d20cdFeEd2983fa9b9b9Cf4E81D6f2fE2",
+      ProviderModuleDsa: "0x0C25452d20cdFeEd2983fa9b9b9Cf4E81D6f2fE2",
     },
   },
   solidity: {
     version: "0.7.4",
-    optimizer: {enabled: process.env.DEBUG ? false : true},
+    settings: {
+      optimizer: {enabled: process.env.DEBUG ? false : true},
+    },
   },
 };
 

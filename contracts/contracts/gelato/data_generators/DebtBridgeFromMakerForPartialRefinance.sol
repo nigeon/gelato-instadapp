@@ -59,11 +59,13 @@ contract DebtBridgeFromMakerForPartialRefinance {
     uint256 public constant GAS_COST = 1490779 + (14908 * 2); // 1933080 + ~2% (Estimated Value)
 
     // To retrieve when the connector is deployed and replace with the address of the deployed instance
-    address public connectGelatoProviderPayment;
+    address public immutable connectGelatoProviderPayment;
 
     constructor(address _connectGelatoProviderPayment) {
         connectGelatoProviderPayment = _connectGelatoProviderPayment;
     }
+
+    /* solhint-disable function-max-lines */
 
     /// @notice Generate Task for a full refinancing between Maker to Compound.
     /// @param _payload contain :
@@ -225,6 +227,8 @@ contract DebtBridgeFromMakerForPartialRefinance {
         );
     }
 
+    /* solhint-enable function-max-lines */
+
     /// @notice Computes values needed for DebtBridge Maker->ProtocolB
     /// @dev Use wad for colRatios.
     /// @param _vaultId The id of the makerDAO vault.
@@ -356,7 +360,7 @@ contract DebtBridgeFromMakerForPartialRefinance {
     ///  method e.g. the function selector of MakerOracle's read function.
     /// @param _colType colType of the new vault, exemple : ETH-B, ETH-A.
     /// @param _provider address of the paying provider.
-    /// @return a call data for a static call of execPayloadForPartialRefinanceFromMakerToMaker.
+    /// @return payload for execPayloadForPartialRefinanceFromMakerToMaker.
     function getDebtBridgePartialRefinanceMakerToMakerData(
         uint256 _vaultId,
         address _token,

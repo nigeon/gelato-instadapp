@@ -267,10 +267,10 @@ describe("Debt Bridge with External Provider", function () {
     );
     await connectGelatoProviderPayment.deployed();
 
-    const ProviderModuleDSA = await ethers.getContractFactory(
-      "ProviderModuleDSA"
+    const ProviderModuleDsa = await ethers.getContractFactory(
+      "ProviderModuleDsa"
     );
-    dsaProviderModule = await ProviderModuleDSA.deploy(
+    dsaProviderModule = await ProviderModuleDsa.deploy(
       hre.network.config.GelatoCore,
       connectGelatoProviderPayment.address
     );

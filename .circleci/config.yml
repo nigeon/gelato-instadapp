@@ -27,9 +27,18 @@ jobs: # a collection of steps
       - run: # Linting
           name: ESLint
           command: yarn eslint . && yarn lint:sol
+      - restore_cache: # special step to restore the Hardhat Network Fork Cache
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          name: Restore Hardhat Network Fork Cache
+          key: hardhat-network-fork
       - run: # Tests
           name: Tests using hardhat mainnet fork
           command: npx hardhat test
+      - save_cache: # special step to save the Hardhat Network Fork cache
+          name: Save Hardhat Network Fork Cache
+          key: hardhat-network-fork
+          paths:
+            - ./cache/hardhat-network-fork
     #   - store_artifacts: # for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
     #       path: coverage
     #       prefix: coverage

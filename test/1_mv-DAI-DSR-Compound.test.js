@@ -237,10 +237,10 @@ describe("Move DAI lending from DSR to Compound", function () {
     // A GelatoProvider is an object with the address of the provider - in our case
     // the DSA address - and the address of the "ProviderModule". This module
     // fulfills certain functions like encoding the execution payload for the Gelato
-    // protocol. Check out ./contracts/ProviderModuleDSA.sol to see what it does.
+    // protocol. Check out ./contracts/ProviderModuleDsa.sol to see what it does.
     const gelatoSelfProvider = new GelatoCoreLib.GelatoProvider({
       addr: dsa.address,
-      module: hre.network.config.ProviderModuleDSA,
+      module: hre.network.config.ProviderModuleDsa,
     });
 
     // ======= Executor Setup =========
@@ -271,7 +271,7 @@ describe("Move DAI lending from DSR to Compound", function () {
           inputs: [
             userAddress,
             [],
-            [hre.network.config.ProviderModuleDSA],
+            [hre.network.config.ProviderModuleDsa],
             TASK_AUTOMATION_FUNDS,
             0, // _getId
             0, // _setId
@@ -296,7 +296,7 @@ describe("Move DAI lending from DSR to Compound", function () {
     expect(
       await gelatoCore.isModuleProvided(
         dsa.address,
-        hre.network.config.ProviderModuleDSA
+        hre.network.config.ProviderModuleDsa
       )
     ).to.be.true;
 

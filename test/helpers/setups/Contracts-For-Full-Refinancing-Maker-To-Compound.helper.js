@@ -25,10 +25,10 @@ async function getAllContracts() {
   );
   await debtBridgeFromMakerForFullRefinance.deployed();
 
-  const ProviderModuleDSA = await ethers.getContractFactory(
+  const ProviderModuleDsa = await ethers.getContractFactory(
     "ProviderModuleDsaFromMakerToCompound"
   );
-  dsaProviderModule = await ProviderModuleDSA.deploy(
+  dsaProviderModule = await ProviderModuleDsa.deploy(
     hre.network.config.GelatoCore,
     contracts.connectGelatoProviderPayment.address
   );

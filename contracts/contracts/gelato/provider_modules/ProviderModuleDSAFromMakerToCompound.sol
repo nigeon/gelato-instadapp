@@ -51,12 +51,18 @@ contract ProviderModuleDsaFromMakerToCompound is GelatoProviderModuleStandard {
             bool gelatoCoreIsAuth
         ) {
             if (!gelatoCoreIsAuth)
-                return "ProviderModuleDSA.isProvided:GelatoCoreNotAuth";
+                return
+                    "ProviderModuleDsaFromMakerToCompound.isProvided:GelatoCoreNotAuth";
         } catch Error(string memory err) {
             return
-                string(abi.encodePacked("ProviderModuleDSA.isProvided:", err));
+                string(
+                    abi.encodePacked(
+                        "ProviderModuleDsaFromMakerToCompound.isProvided:",
+                        err
+                    )
+                );
         } catch {
-            return "ProviderModuleDSA.isProvided:undefined";
+            return "ProviderModuleDsaFromMakerToCompound.isProvided:undefined";
         }
 
         return OK;
