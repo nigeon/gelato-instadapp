@@ -36,11 +36,11 @@ Debt Bridge is a financial process that aims to make the user position safer. In
 
 ### Full Refinancing from Maker's Vault to Compound.
 
-Based on the [debt bridge](https://docs.instadapp.io/usecases/debt-bridge/) documentation of Instadapp, we automated this process by adding two connectors `ConnectGelatoDebtBridge`, `ConnectGelatoProviderPayment` and a Gelato condition contract.
+Based on the [debt bridge](https://docs.instadapp.io/usecases/debt-bridge/) documentation of Instadapp, we automated this process by adding two connectors `ConnectGelatoData`, `ConnectGelatoProviderPayment` and a Gelato condition contract.
 
 - `ConditionMakerVaultIsSafe.sol`: determine if a specific vault is on an unsafe position.
 
-- `ConnectGelatoDebtBridge.sol`: generates the required data which will be assigned to the different inputs needed by `ConnectMaker` and `ConnectCompound` by using InstaMemory. Examples are the amount of DAI to pay back or the amount of Ether to withdraw from Maker.
+- `ConnectGelatoData.sol`: generates the required data which will be assigned to the different inputs needed by `ConnectMaker` and `ConnectCompound` by using InstaMemory. Examples are the amount of DAI to pay back or the amount of Ether to withdraw from Maker.
 
 - `ConnectGelatoProviderPayment.sol`: makes sure part of the moved collateral is used to pay the Gelato provider for the incurred transaction fee. The Gelato Provider will in turn pay the executor who executed the task.
 

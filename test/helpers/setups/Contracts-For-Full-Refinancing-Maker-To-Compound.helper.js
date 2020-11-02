@@ -4,29 +4,29 @@ const {ethers} = hre;
 const getContracts = require("./Common-Contracts.helper");
 
 async function getAllContracts() {
-  let connectGelatoDebtBridge;
-  let debtBridgeFromMaker;
+  let connectGelatoData;
+  let debtBridgeFromMakerForFullRefinance;
   let dsaProviderModule;
   let contracts = await getContracts();
 
-  const ConnectGelatoDebtBridge = await ethers.getContractFactory(
-    "ConnectGelatoDebtBridge"
+  const ConnectGelatoData = await ethers.getContractFactory(
+    "ConnectGelatoData"
   );
-  connectGelatoDebtBridge = await ConnectGelatoDebtBridge.deploy(
+  connectGelatoData = await ConnectGelatoData.deploy(
     (await contracts.instaConnectors.connectorLength()).add(1)
   );
-  await connectGelatoDebtBridge.deployed();
+  await connectGelatoData.deployed();
 
-  const DebtBridgeFromMaker = await ethers.getContractFactory(
+  const DebtBridgeFromMakerForFullRefinance = await ethers.getContractFactory(
     "DebtBridgeFromMakerForFullRefinance"
   );
-  debtBridgeFromMaker = await DebtBridgeFromMaker.deploy(
+  debtBridgeFromMakerForFullRefinance = await DebtBridgeFromMakerForFullRefinance.deploy(
     contracts.connectGelatoProviderPayment.address
   );
-  await debtBridgeFromMaker.deployed();
+  await debtBridgeFromMakerForFullRefinance.deployed();
 
   const ProviderModuleDSA = await ethers.getContractFactory(
-    "ProviderModuleDSAFromMakerToCompound"
+    "ProviderModuleDsaFromMakerToCompound"
   );
   dsaProviderModule = await ProviderModuleDSA.deploy(
     hre.network.config.GelatoCore,
@@ -34,8 +34,8 @@ async function getAllContracts() {
   );
   await dsaProviderModule.deployed();
 
-  contracts.connectGelatoDebtBridge = connectGelatoDebtBridge;
-  contracts.debtBridgeFromMaker = debtBridgeFromMaker;
+  contracts.connectGelatoData = connectGelatoData;
+  contracts.debtBridgeFromMakerForFullRefinance = debtBridgeFromMakerForFullRefinance;
   contracts.dsaProviderModule = dsaProviderModule;
 
   return contracts;

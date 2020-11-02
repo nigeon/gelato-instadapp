@@ -27,7 +27,7 @@ async function getContracts() {
   let instaList;
   let dssCdpManager;
   let getCdps;
-  let daiToken;
+  let DAI;
   let gelatoCore;
   let cDaiToken;
   let cEthToken;
@@ -39,8 +39,8 @@ async function getContracts() {
   let conditionMakerVaultUnsafe;
   let connectGelatoProviderPayment;
   let priceOracleResolver;
-  let connectGelatoDebtBridge;
-  let debtBridgeFromMaker;
+  let connectGelatoData;
+  let debtBridgeFromMakerForFullRefinance;
 
   instaMaster = await ethers.provider.getSigner(hre.network.config.InstaMaster);
 
@@ -78,7 +78,7 @@ async function getContracts() {
     hre.network.config.DssCdpManager
   );
   getCdps = await ethers.getContractAt(GetCdps.abi, hre.network.config.GetCdps);
-  daiToken = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
+  DAI = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
   gelatoCore = await ethers.getContractAt(
     GelatoCoreLib.GelatoCore.abi,
     hre.network.config.GelatoCore
@@ -122,29 +122,34 @@ async function getContracts() {
   );
   await connectGelatoProviderPayment.deployed();
 
+  const MakerResolver = await ethers.getContractFactory("MakerResolver");
+  const makerResolver = await MakerResolver.deploy();
+  await makerResolver.deployed();
+
   return {
-    connectGelato: connectGelato,
-    connectMaker: connectMaker,
-    connectInstaPool: connectInstaPool,
-    connectCompound: connectCompound,
-    instaIndex: instaIndex,
-    instaList: instaList,
-    instaMapping: instaMapping,
-    dssCdpManager: dssCdpManager,
-    getCdps: getCdps,
-    daiToken: daiToken,
-    gelatoCore: gelatoCore,
-    cDaiToken: cDaiToken,
-    cEthToken: cEthToken,
-    instaMaster: instaMaster,
-    instaConnectors: instaConnectors,
-    compoundResolver: compoundResolver,
-    conditionMakerVaultUnsafe: conditionMakerVaultUnsafe,
-    connectGelatoProviderPayment: connectGelatoProviderPayment,
-    priceOracleResolver: priceOracleResolver,
+    connectGelato,
+    connectMaker,
+    connectInstaPool,
+    connectCompound,
+    instaIndex,
+    instaList,
+    instaMapping,
+    dssCdpManager,
+    getCdps,
+    DAI,
+    gelatoCore,
+    cDaiToken,
+    cEthToken,
+    instaMaster,
+    instaConnectors,
+    compoundResolver,
+    conditionMakerVaultUnsafe,
+    connectGelatoProviderPayment,
+    priceOracleResolver,
     dsa: ethers.constants.AddressZero,
-    connectGelatoDebtBridge: connectGelatoDebtBridge,
-    debtBridgeFromMaker: debtBridgeFromMaker,
+    connectGelatoData,
+    debtBridgeFromMakerForFullRefinance,
+    makerResolver,
   };
 }
 

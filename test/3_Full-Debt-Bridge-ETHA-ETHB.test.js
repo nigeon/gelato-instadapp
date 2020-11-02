@@ -3,7 +3,7 @@ const hre = require("hardhat");
 const {ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
-const makerETHAToMakerETHBSetup = require("./helpers/Full-Refinance-External-Provider-Maker-To-Maker.helper");
+const makerETHAToMakerETHBSetup = require("./helpers/Full-Refinance-Maker-To-Maker.helper");
 
 // This test showcases how to submit a task refinancing a Users debt position from
 // Maker to Compound using Gelato
@@ -187,13 +187,11 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     const gasFeesPaidFromCol = ethers.utils
       .parseUnits(String(1490779 + 14908 * 2), 0)
       .mul(gelatoGasPrice);
-    const debtOnMakerBefore = await contracts.debtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerBefore = await contracts.makerResolver.getMakerVaultDebt(
       vaultAId
     );
     const pricedCollateral = (
-      await contracts.debtBridgeFromMaker.getMakerVaultCollateralBalance(
-        vaultAId
-      )
+      await contracts.makerResolver.getMakerVaultCollateralBalance(vaultAId)
     ).sub(gasFeesPaidFromCol);
 
     //#endregion
@@ -228,10 +226,10 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     let vaultBId = String(cdps.ids[1]);
     expect(cdps.ids[1].isZero()).to.be.false;
 
-    const debtOnMakerVaultB = await contracts.debtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerVaultB = await contracts.makerResolver.getMakerVaultDebt(
       vaultBId
     );
-    const pricedCollateralOnVaultB = await contracts.debtBridgeFromMaker.getMakerVaultCollateralBalance(
+    const pricedCollateralOnVaultB = await contracts.makerResolver.getMakerVaultCollateralBalance(
       vaultBId
     );
 
@@ -245,10 +243,10 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     // Estimated amount of collateral should be equal to the actual one read on compound contracts
     expect(pricedCollateral).to.be.equal(pricedCollateralOnVaultB);
 
-    const debtOnMakerOnVaultAAfter = await contracts.debtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultDebt(
       vaultAId
     );
-    const collateralOnMakerOnVaultAAfter = await contracts.debtBridgeFromMaker.getMakerVaultCollateralBalance(
+    const collateralOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultCollateralBalance(
       vaultAId
     ); // in Ether.
 
@@ -257,9 +255,9 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     expect(collateralOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
 
     // DSA has maximum 2 wei DAI in it due to maths inaccuracies
-    expect(
-      await contracts.daiToken.balanceOf(contracts.dsa.address)
-    ).to.be.equal(constants.MAKER_INITIAL_DEBT);
+    expect(await contracts.DAI.balanceOf(contracts.dsa.address)).to.be.equal(
+      constants.MAKER_INITIAL_DEBT
+    );
 
     //#endregion
   });

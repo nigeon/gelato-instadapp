@@ -3,7 +3,7 @@ const hre = require("hardhat");
 const {ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
-const makerToCompoundSetup = require("./helpers/Full-Refinance-External-Provider-Maker-To-Compound.helper");
+const makerToCompoundSetup = require("./helpers/Full-Refinance-Maker-To-Compound.helper");
 
 // This test showcases how to submit a task refinancing a Users debt position from
 // Maker to Compound using Gelato
@@ -182,13 +182,11 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
     const gasFeesPaidFromCol = ethers.utils
       .parseUnits(String(1490779 + 14908 * 2), 0)
       .mul(gelatoGasPrice);
-    const debtOnMakerBefore = await contracts.debtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerBefore = await contracts.makerResolver.getMakerVaultDebt(
       vaultId
     );
     const pricedCollateral = (
-      await contracts.debtBridgeFromMaker.getMakerVaultCollateralBalance(
-        vaultId
-      )
+      await contracts.makerResolver.getMakerVaultCollateralBalance(vaultId)
     ).sub(gasFeesPaidFromCol);
 
     //#endregion
@@ -246,10 +244,10 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
       )
     ).to.be.lt(ethers.utils.parseUnits("1", 12));
 
-    const debtOnMakerAfter = await contracts.debtBridgeFromMaker.getMakerVaultDebt(
+    const debtOnMakerAfter = await contracts.makerResolver.getMakerVaultDebt(
       vaultId
     );
-    const collateralOnMakerAfter = await contracts.debtBridgeFromMaker.getMakerVaultCollateralBalance(
+    const collateralOnMakerAfter = await contracts.makerResolver.getMakerVaultCollateralBalance(
       vaultId
     ); // in Ether.
 
@@ -258,9 +256,9 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
     expect(collateralOnMakerAfter).to.be.equal(ethers.constants.Zero);
 
     // DSA contain 1000 DAI
-    expect(
-      await contracts.daiToken.balanceOf(contracts.dsa.address)
-    ).to.be.equal(constants.MAKER_INITIAL_DEBT);
+    expect(await contracts.DAI.balanceOf(contracts.dsa.address)).to.be.equal(
+      constants.MAKER_INITIAL_DEBT
+    );
 
     //#endregion
   });

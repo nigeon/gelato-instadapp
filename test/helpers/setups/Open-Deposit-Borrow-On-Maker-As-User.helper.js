@@ -5,7 +5,7 @@ const ConnectMaker = require("../../../pre-compiles/ConnectMaker.json");
 
 async function userOpenDepositBorrowOnMakerVault(
   userAddress,
-  daiToken,
+  DAI,
   dsa,
   getCdps,
   dssCdpManager,
@@ -56,7 +56,7 @@ async function userOpenDepositBorrowOnMakerVault(
     userAddress
   );
 
-  expect(await daiToken.balanceOf(dsa.address)).to.be.equal(makerInitialDebt);
+  expect(await DAI.balanceOf(dsa.address)).to.be.equal(makerInitialDebt);
 
   //#endregion
 

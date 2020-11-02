@@ -23,13 +23,15 @@ describe("Debt Partial Refinance Math Unit Test", function () {
     process.exit(1);
   }
 
-  let debtRefinanceMath;
+  let debtBridgeFromMakerForPartialRefinance;
   before(async function () {
-    const DebtRefinanceMath = await ethers.getContractFactory(
-      "DebtRefinanceMath"
+    const DebtBridgeFromMakerForPartialRefinance = await ethers.getContractFactory(
+      "DebtBridgeFromMakerForPartialRefinance"
     );
-    debtRefinanceMath = await DebtRefinanceMath.deploy();
-    debtRefinanceMath.deployed();
+    debtBridgeFromMakerForPartialRefinance = await DebtBridgeFromMakerForPartialRefinance.deploy(
+      ethers.constants.AddressZero
+    );
+    debtBridgeFromMakerForPartialRefinance.deployed();
   });
 
   it("#1: wCalcCollateralToWithdraw should return the amount of collateral to withdraw on protocol 1 and to put on protocol 2", async function () {
@@ -71,7 +73,7 @@ describe("Debt Partial Refinance Math Unit Test", function () {
     //#endregion
 
     expect(
-      await debtRefinanceMath.wCalcCollateralToWithdraw(
+      await debtBridgeFromMakerForPartialRefinance.wCalcCollateralToWithdraw(
         minColRatioOnMaker,
         minColRatioOnPositionB,
         collateralPrice,
@@ -121,7 +123,7 @@ describe("Debt Partial Refinance Math Unit Test", function () {
     //#endregion
 
     expect(
-      await debtRefinanceMath.wCalcDebtToRepay(
+      await debtBridgeFromMakerForPartialRefinance.wCalcDebtToRepay(
         minColRatioOnMaker,
         minColRatioOnPositionB,
         collateral,

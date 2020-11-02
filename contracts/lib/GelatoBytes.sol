@@ -26,10 +26,10 @@ library GelatoBytes {
             (bytes4(_bytes[3]) >> 24);
     }
 
-    function revertWithErrorString(
-        bytes memory _bytes,
-        string memory _tracingInfo
-    ) internal pure {
+    function revertWithError(bytes memory _bytes, string memory _tracingInfo)
+        internal
+        pure
+    {
         // 68: 32-location, 32-length, 4-ErrorSelector, UTF-8 err
         if (_bytes.length % 32 == 4) {
             bytes4 selector;
@@ -54,10 +54,11 @@ library GelatoBytes {
         }
     }
 
-    function generateErrorString(
-        bytes memory _bytes,
-        string memory _tracingInfo
-    ) internal pure returns (string memory) {
+    function returnError(bytes memory _bytes, string memory _tracingInfo)
+        internal
+        pure
+        returns (string memory)
+    {
         // 68: 32-location, 32-length, 4-ErrorSelector, UTF-8 err
         if (_bytes.length % 32 == 4) {
             bytes4 selector;

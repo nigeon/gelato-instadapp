@@ -32,7 +32,7 @@ describe("ConditionMakerVaultUnsafe Unit Test", function () {
   let dssCdpManager;
   let instaList;
   let instaIndex;
-  let daiToken;
+  let DAI;
 
   let conditionMakerVaultUnsafe;
   let priceOracleResolver;
@@ -66,7 +66,7 @@ describe("ConditionMakerVaultUnsafe Unit Test", function () {
       DssCdpManager.abi,
       hre.network.config.DssCdpManager
     );
-    daiToken = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
+    DAI = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
 
     // ========== Test Setup ============
 
@@ -141,7 +141,7 @@ describe("ConditionMakerVaultUnsafe Unit Test", function () {
       userAddress
     );
 
-    expect(await daiToken.balanceOf(dsa.address)).to.be.equal(
+    expect(await DAI.balanceOf(dsa.address)).to.be.equal(
       ethers.utils.parseEther("1000")
     );
     // Add ETH/USD Maker Medianizer in the PriceOracleResolver

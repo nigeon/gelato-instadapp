@@ -30,7 +30,7 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
 
   let instaList;
   let instaIndex;
-  let daiToken;
+  let DAI;
   let instaConnectors;
   let instaMaster;
   let connectBasic;
@@ -83,7 +83,7 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
       DssCdpManager.abi,
       hre.network.config.DssCdpManager
     );
-    daiToken = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
+    DAI = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
 
     // ========== Test Setup ============
 
@@ -140,7 +140,7 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
   });
 
   it("#1: payProvider should pay to Provider 300 Dai", async function () {
-    const providerDAIBalanceBefore = await daiToken.balanceOf(providerAddress);
+    const providerDAIBalanceBefore = await DAI.balanceOf(providerAddress);
 
     await dsa.cast(
       [hre.network.config.ConnectMaker],
@@ -185,7 +185,7 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
       userAddress
     );
 
-    expect(await daiToken.balanceOf(dsa.address)).to.be.equal(
+    expect(await DAI.balanceOf(dsa.address)).to.be.equal(
       ethers.utils.parseEther("1000")
     );
 
@@ -199,7 +199,7 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
           functionname: "payProvider",
           inputs: [
             providerAddress,
-            daiToken.address,
+            DAI.address,
             ethers.utils.parseUnits("300", 18),
             0,
             0,
@@ -209,7 +209,7 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
       userAddress
     );
 
-    expect(await daiToken.balanceOf(providerAddress)).to.be.equal(
+    expect(await DAI.balanceOf(providerAddress)).to.be.equal(
       providerDAIBalanceBefore.add(ethers.utils.parseUnits("300", 18))
     );
   });
@@ -289,6 +289,6 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
           value: ethers.utils.parseEther("1"),
         }
       )
-    ).to.be.revertedWith("ConnectGelatoProviderPayment.payProvider:addr0");
+    ).to.be.revertedWith("ConnectGelatoProviderPayment.payProvider:!_provider");
   });
 });

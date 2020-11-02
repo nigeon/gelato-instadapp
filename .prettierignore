@@ -3,4 +3,5 @@ artifacts
 cache
 assets
 coverage
+contracts/constants
 contracts/vendor

@@ -5,7 +5,7 @@ const {ethers} = hre;
 async function enableGelatoConnectorsForFromMaker(
   userWallet,
   connectGelatoProviderPaymentAddr,
-  connectGelatoDebtBridgeAddr,
+  connectGelatoDataAddr,
   instaMaster,
   instaConnectors
 ) {
@@ -30,9 +30,7 @@ async function enableGelatoConnectorsForFromMaker(
     params: [await instaMaster.getAddress()],
   });
 
-  await instaConnectors
-    .connect(instaMaster)
-    .enable(connectGelatoDebtBridgeAddr);
+  await instaConnectors.connect(instaMaster).enable(connectGelatoDataAddr);
 
   await instaConnectors
     .connect(instaMaster)
@@ -43,8 +41,7 @@ async function enableGelatoConnectorsForFromMaker(
     params: [await instaMaster.getAddress()],
   });
 
-  expect(await instaConnectors.isConnector([connectGelatoDebtBridgeAddr])).to.be
-    .true;
+  expect(await instaConnectors.isConnector([connectGelatoDataAddr])).to.be.true;
   expect(await instaConnectors.isConnector([connectGelatoProviderPaymentAddr]))
     .to.be.true;
 

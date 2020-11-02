@@ -13,9 +13,9 @@ const ConnectMaker = require("../pre-compiles/ConnectMaker.json");
 const ConnectCompound = require("../pre-compiles/ConnectCompound.json");
 const ConnectInstaPool = require("../pre-compiles/ConnectInstaPool.json");
 const ConnectAuth = require("../pre-compiles/ConnectAuth.json");
-const ConnectGelatoFullDebtBridgeFromMakerABI = require("../artifacts/contracts/connectors/ConnectGelatoPartialDebtBridgeFromMaker.sol/ConnectGelatoPartialDebtBridgeFromMaker.json")
+const ConnectGelatoFullDebtBridgeFromMakerABI = require("../artifacts/contracts/contracts/connectors/ConnectGelatoPartialDebtBridgeFromMaker.sol/ConnectGelatoPartialDebtBridgeFromMaker.json")
   .abi;
-const ConnectGelatoProviderPaymentABI = require("../artifacts/contracts/connectors/ConnectGelatoProviderPayment.sol/ConnectGelatoProviderPayment.json")
+const ConnectGelatoProviderPaymentABI = require("../artifacts/contracts/contracts/connectors/ConnectGelatoProviderPayment.sol/ConnectGelatoProviderPayment.json")
   .abi;
 const InstaConnector = require("../pre-compiles/InstaConnectors.json");
 const DssCdpManager = require("../pre-compiles/DssCdpManager.json");
@@ -23,7 +23,7 @@ const GetCdps = require("../pre-compiles/GetCdps.json");
 const IERC20 = require("../pre-compiles/IERC20.json");
 const CTokenInterface = require("../pre-compiles/CTokenInterface.json");
 const CompoundResolver = require("../pre-compiles/InstaCompoundResolver.json");
-const PriceOracleResolverABI = require("../artifacts/contracts/resolvers/PriceOracleResolver.sol/PriceOracleResolver.json")
+const PriceOracleResolverABI = require("../artifacts/contracts/contracts/resolvers/PriceOracleResolver.sol/PriceOracleResolver.json")
   .abi;
 
 const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -138,7 +138,7 @@ describe("Debt Bridge with External Provider", function () {
   let instaList;
   let dssCdpManager;
   let getCdps;
-  let daiToken;
+  let DAI;
   let gelatoCore;
   let cDaiToken;
   let cEthToken;
@@ -211,7 +211,7 @@ describe("Debt Bridge with External Provider", function () {
       GetCdps.abi,
       hre.network.config.GetCdps
     );
-    daiToken = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
+    DAI = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
     gelatoCore = await ethers.getContractAt(
       GelatoCoreLib.GelatoCore.abi,
       hre.network.config.GelatoCore
@@ -501,9 +501,7 @@ describe("Debt Bridge with External Provider", function () {
       userAddress
     );
 
-    expect(await daiToken.balanceOf(dsa.address)).to.be.equal(
-      MAKER_INITIAL_DEBT
-    );
+    expect(await DAI.balanceOf(dsa.address)).to.be.equal(MAKER_INITIAL_DEBT);
 
     //#endregion
 
@@ -925,9 +923,7 @@ describe("Debt Bridge with External Provider", function () {
     ).to.be.lt(ethers.utils.parseUnits("1", 1));
 
     // DSA contain 1000 DAI
-    expect(await daiToken.balanceOf(dsa.address)).to.be.equal(
-      MAKER_INITIAL_DEBT
-    );
+    expect(await DAI.balanceOf(dsa.address)).to.be.equal(MAKER_INITIAL_DEBT);
 
     //#endregion
   });
