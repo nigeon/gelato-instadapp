@@ -120,6 +120,8 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
             );
     }
 
+    /* solhint-disable function-max-lines */
+
     /// @notice Generate Task for a full refinancing between Maker to Compound.
     /// @param _payload contain :
     // @param _vaultId Id of the unsafe vault of the client.
@@ -198,7 +200,7 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
         );
     }
 
-    /// @notice Generate Task for a full refinancing between Maker (exemple : ETH-A) to Maker (exemple: ETH-B).
+    /// @notice Generate Task for a full refinancing between Maker e.g. ETH-A and ETH-B.
     /// @param _payload contain :
     // @param _vaultId Id of the unsafe vault of the client.
     // @param _token  vault's col token address .
@@ -289,7 +291,8 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
     ///  e.g. Maker's ETH/USD oracle for ETH collateral pricing.
     /// @param _oraclePayload The data for making the staticcall to the oracle's read
     ///  method e.g. the function selector of MakerOracle's read function.
-    /// @return wDaiDebtToMove DAI Debt (wad) to: flashBorrow->repay Maker->withdraw from B->flashPayback.
+    /// @return wDaiDebtToMove DAI Debt (wad) to:
+    ///   flashBorrow->repay Maker->withdraw from B->flashPayback.
     /// @return wColToWithdrawFromMaker (wad) to: withdraw from Maker and deposit on B.
     /// @return gasFeesPaidFromCol Gelato automation-gas-fees paid from user's collateral
     // solhint-disable function-max-lines
@@ -352,4 +355,6 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
             wDaiDebtOnMaker
         );
     }
+
+    /* solhint-enable function-max-lines */
 }

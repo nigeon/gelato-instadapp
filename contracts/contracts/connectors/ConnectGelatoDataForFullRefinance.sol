@@ -119,6 +119,8 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
             );
     }
 
+    /* solhint-disable function-max-lines */
+
     /// @notice Generate Task for a full refinancing between Maker to Compound.
     /// @param _vaultId Id of the unsafe vault of the client.
     /// @param _token  vault's col token address .
@@ -176,7 +178,7 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
         );
     }
 
-    /// @notice Generate Task for a full refinancing between Maker (exemple : ETH-A) to Maker (exemple: ETH-B).
+    /// @notice Generate Task for a full refinancing between Maker e.g. ETH-A to ETH-B.
     /// @param _vaultId Id of the unsafe vault of the client.
     /// @param _token  vault's col token address .
     /// @param _colType colType of the new vault, exemple : ETH-B, ETH-A.
@@ -236,4 +238,6 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
             abi.encode(_targets, _datas)
         );
     }
+
+    /* solhint-enable function-max-lines */
 }
