@@ -36,21 +36,17 @@ Debt Bridge is a financial process that aims to make the user position safer. In
 
 ### Full Refinancing from Maker's Vault to Compound.
 
-Based on the [debt bridge](https://docs.instadapp.io/usecases/debt-bridge/) documentation of Instadapp, we automated this process by adding two connectors `ConnectGelatoData`, `ConnectGelatoProviderPayment` and a Gelato condition contract.
+Based on the [debt bridge](https://docs.instadapp.io/usecases/debt-bridge/) documentation of Instadapp, we automated this process by adding two connectors `ConnectGelatoDataForFullRefinance`, `ConnectGelatoProviderPayment` and a Gelato condition contract.
 
 - `ConditionMakerVaultIsSafe.sol`: determine if a specific vault is on an unsafe position.
 
-- `ConnectGelatoData.sol`: generates the required data which will be assigned to the different inputs needed by `ConnectMaker` and `ConnectCompound` by using InstaMemory. Examples are the amount of DAI to pay back or the amount of Ether to withdraw from Maker.
+- `ConnectGelatoDataForFullRefinance.sol`: generates the required data which will be assigned to the different inputs needed by `ConnectMaker` and `ConnectCompound`. Examples are the amount of DAI to pay back or the amount of Ether to withdraw from Maker. He will create the chain of connectors call needed to perform the debt refinance, he will generate the data wanted by the flashloan connector and he will call this flashloan connector through the cast function of Dsa.
 
 - `ConnectGelatoProviderPayment.sol`: makes sure part of the moved collateral is used to pay the Gelato provider for the incurred transaction fee. The Gelato Provider will in turn pay the executor who executed the task.
 
 In this example, the executor will be refunded for the incurred transaction fees by subtracting the estimated gas costs from the collateral which is moved from Maker to Compound. This means the user does not have to pre pay in order to incentivize the execution of the task.
 
 For understanding the entire process of a full refinancing, from the opening of the vault on maker to the execution of the refinancing on InstaDapp, take a look at `test/2_Full-Debt-Bridge-Maker-Compound.test.js` test.
-
-## Known Bugs
-
-Sometimes when running the `test/2_Full-Debt-Bridge-Maker-Compound.test.js` test, Hardhat will throw the folliwing error: `AssertionError: Expected event "LogExecSuccess" to be emitted, but it wasn't`. If this happens, just wait a few seconds and re-run the tests, eventually it should work.
 
 ## Run the tests
 
