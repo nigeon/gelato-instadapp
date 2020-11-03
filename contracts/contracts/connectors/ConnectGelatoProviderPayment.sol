@@ -31,8 +31,8 @@ contract ConnectGelatoProviderPayment is
 
     constructor(uint256 id, address _gelatoProvider) {
         _id = id;
-        gelatoProvider = _gelatoProvider;
         _this = address(this);
+        gelatoProvider = _gelatoProvider;
     }
 
     /// @dev Connector Details
@@ -55,9 +55,6 @@ contract ConnectGelatoProviderPayment is
     ///    - _getId does not match actual InstaMemory gelatoProvider payment slot
     ///    - _token balance not in DSA
     ///    - worthless _token risk
-    /// @param _gelatoProvider The Provider who pays the Gelato network for automation.
-    //   This param should be verified / replaced by the ProviderModule in Gelato on-chain.
-    //   In the latter case, it does not matter what address is passed off-chain.
     /// @param _token The token used to pay the Provider.
     /// @param _amt The amount of _token to pay the Gelato Provider.
     /// @param _getId The InstaMemory slot at which the payment amount was stored.
@@ -68,16 +65,16 @@ contract ConnectGelatoProviderPayment is
         uint256 _getId,
         uint256 _setId
     ) external payable override {
-        address _gelatoProvider = IConnectGelatoProviderPayment(_this)
+        address provider = IConnectGelatoProviderPayment(_this)
             .gelatoProvider();
         require(
-            _gelatoProvider != address(0x0),
-            "ConnectGelatoProviderPayment.payProvider:!_gelatoProvider"
+            provider != address(0x0),
+            "ConnectGelatoProviderPayment.payProvider:!provider"
         );
         uint256 amt = _getUint(_getId, _amt);
         _setUint(_setId, amt);
         _token == ETH
-            ? payable(_gelatoProvider).sendValue(amt)
-            : IERC20(_token).safeTransfer(_gelatoProvider, amt);
+            ? payable(provider).sendValue(amt)
+            : IERC20(_token).safeTransfer(provider, amt);
     }
 }

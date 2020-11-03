@@ -168,9 +168,7 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
           value: ethers.utils.parseEther("1"),
         }
       )
-    ).to.be.revertedWith(
-      "ConnectGelatoProviderPayment.payProvider:!_gelatoProvider"
-    );
+    ).to.be.revertedWith("ConnectGelatoProviderPayment.payProvider:!provider");
   });
 
   it("#2: setProvider should change the provider address", async function () {

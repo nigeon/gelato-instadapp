@@ -57,7 +57,7 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
 
     /// @dev Connector Details
     function connectorID()
-        public
+        external
         view
         override
         returns (uint256 _type, uint256 id)
@@ -65,11 +65,16 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
         (_type, id) = (1, _id); // Should put specific value.
     }
 
+    /// @notice Entry Point for DSA.cast DebtBridge from e.g ETH-A to ETH-B
+    /// @dev payable to be compatible in conjunction with DSA.cast payable target
+    /// @param _vaultId Id of the unsafe vault of the client.
+    /// @param _token  vault's col token address .
+    /// @param _colType colType of the new vault. example : ETH-B, ETH-A.
     function getDataAndCastForFromMakerToMaker(
         uint256 _vaultId,
         address _token,
         string calldata _colType
-    ) public payable {
+    ) external payable {
         (
             address[] memory targets,
             bytes[] memory datas
@@ -82,10 +87,14 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
         _cast(targets, datas);
     }
 
+    /// @notice Entry Point for DSA.cast DebtBridge from Maker to Compound
+    /// @dev payable to be compatible in conjunction with DSA.cast payable target
+    /// @param _vaultId Id of the unsafe vault of the client.
+    /// @param _token  vault's col token address .
     function getDataAndCastForFromMakerToCompound(
         uint256 _vaultId,
         address _token
-    ) public payable {
+    ) external payable {
         (
             address[] memory targets,
             bytes[] memory datas
@@ -114,61 +123,6 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
 
     /* solhint-disable function-max-lines */
 
-    /// @notice Generate Task for a full refinancing between Maker to Compound.
-    /// @param _vaultId Id of the unsafe vault of the client.
-    /// @param _token  vault's col token address .
-    /// @return targets : flashloan contract address
-    /// @return datas : calldata for flashloan
-    function _execPayloadForFullRefinanceFromMakerToCompound(
-        uint256 _vaultId,
-        address _token
-    ) internal view returns (address[] memory targets, bytes[] memory datas) {
-        targets = new address[](1);
-        targets[0] = INSTA_POOL_V2;
-
-        uint256 wDaiDebtToMove = _getMakerVaultDebt(_vaultId);
-        uint256 wColToWithdrawFromMaker = _getMakerVaultCollateralBalance(
-            _vaultId
-        );
-        uint256 gasFeesPaidFromCol = _getGelatoProviderFees(GAS_COST);
-
-        address[] memory _targets = new address[](6);
-        _targets[0] = CONNECT_MAKER; // payback
-        _targets[1] = CONNECT_MAKER; // withdraw
-        _targets[2] = CONNECT_COMPOUND; // deposit
-        _targets[3] = CONNECT_COMPOUND; // borrow
-        _targets[4] = _connectGelatoProviderPayment;
-        _targets[5] = INSTA_POOL_V2;
-
-        bytes[] memory _datas = new bytes[](6);
-        _datas[0] = _encodePaybackMakerVault(_vaultId, uint256(-1), 0, 0);
-        _datas[1] = _encodedWithdrawMakerVault(_vaultId, uint256(-1), 0, 0);
-        _datas[2] = _encodeDepositCompound(
-            _token,
-            sub(wColToWithdrawFromMaker, gasFeesPaidFromCol),
-            0,
-            0
-        );
-        _datas[3] = _encodeBorrowCompound(DAI, wDaiDebtToMove, 0, 0);
-        _datas[4] = _encodePayGelatoProvider(_token, gasFeesPaidFromCol, 0, 0);
-        _datas[5] = _encodeFlashPayback(DAI, wDaiDebtToMove, 0, 0);
-
-        datas = new bytes[](1);
-        datas[0] = abi.encodeWithSelector(
-            IConnectInstaPoolV2.flashBorrowAndCast.selector,
-            DAI,
-            wDaiDebtToMove,
-            0,
-            abi.encode(_targets, _datas)
-        );
-    }
-
-    /// @notice Generate Task for a full refinancing between Maker e.g. ETH-A to ETH-B.
-    /// @param _vaultId Id of the unsafe vault of the client.
-    /// @param _token  vault's col token address .
-    /// @param _colType colType of the new vault, exemple : ETH-B, ETH-A.
-    /// @return targets : flashloan contract address
-    /// @return datas : calldata for flashloan
     function _execPayloadForFullRefinanceFromMakerToMaker(
         uint256 _vaultId,
         address _token,
@@ -205,6 +159,50 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
         _datas[4] = _encodeBorrowDaiMakerVault(0, wDaiDebtToMove, 0, 0);
         _datas[5] = _encodePayGelatoProvider(_token, gasFeesPaidFromCol, 0, 0);
         _datas[6] = _encodeFlashPayback(DAI, wDaiDebtToMove, 0, 0);
+
+        datas = new bytes[](1);
+        datas[0] = abi.encodeWithSelector(
+            IConnectInstaPoolV2.flashBorrowAndCast.selector,
+            DAI,
+            wDaiDebtToMove,
+            0,
+            abi.encode(_targets, _datas)
+        );
+    }
+
+    function _execPayloadForFullRefinanceFromMakerToCompound(
+        uint256 _vaultId,
+        address _token
+    ) internal view returns (address[] memory targets, bytes[] memory datas) {
+        targets = new address[](1);
+        targets[0] = INSTA_POOL_V2;
+
+        uint256 wDaiDebtToMove = _getMakerVaultDebt(_vaultId);
+        uint256 wColToWithdrawFromMaker = _getMakerVaultCollateralBalance(
+            _vaultId
+        );
+        uint256 gasFeesPaidFromCol = _getGelatoProviderFees(GAS_COST);
+
+        address[] memory _targets = new address[](6);
+        _targets[0] = CONNECT_MAKER; // payback
+        _targets[1] = CONNECT_MAKER; // withdraw
+        _targets[2] = CONNECT_COMPOUND; // deposit
+        _targets[3] = CONNECT_COMPOUND; // borrow
+        _targets[4] = _connectGelatoProviderPayment;
+        _targets[5] = INSTA_POOL_V2;
+
+        bytes[] memory _datas = new bytes[](6);
+        _datas[0] = _encodePaybackMakerVault(_vaultId, uint256(-1), 0, 0);
+        _datas[1] = _encodedWithdrawMakerVault(_vaultId, uint256(-1), 0, 0);
+        _datas[2] = _encodeDepositCompound(
+            _token,
+            sub(wColToWithdrawFromMaker, gasFeesPaidFromCol),
+            0,
+            0
+        );
+        _datas[3] = _encodeBorrowCompound(DAI, wDaiDebtToMove, 0, 0);
+        _datas[4] = _encodePayGelatoProvider(_token, gasFeesPaidFromCol, 0, 0);
+        _datas[5] = _encodeFlashPayback(DAI, wDaiDebtToMove, 0, 0);
 
         datas = new bytes[](1);
         datas[0] = abi.encodeWithSelector(
