@@ -94,7 +94,8 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
       "ConnectGelatoProviderPayment"
     );
     connectGelatoProviderPayment = await ConnectGelatoProviderPayment.deploy(
-      connectorId
+      connectorId,
+      ethers.constants.AddressZero
     );
     connectGelatoProviderPayment.deployed();
 
@@ -139,7 +140,50 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
     );
   });
 
-  it("#1: payProvider should pay to Provider 300 Dai", async function () {
+  it("#1: payProvider should return error message ConnectGelatoProviderPayment.payProvider:INVALIDADDESS when provider is Zero Address", async function () {
+    await expect(
+      dsa.cast(
+        [connectBasic.address, connectGelatoProviderPayment.address],
+        [
+          await hre.run("abi-encode-withselector", {
+            abi: ConnectBasic.abi,
+            functionname: "deposit",
+            inputs: [
+              "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+              ethers.utils.parseEther("1"),
+              0,
+              "105",
+            ],
+          }),
+          await hre.run("abi-encode-withselector", {
+            abi: (
+              await hre.artifacts.readArtifact("ConnectGelatoProviderPayment")
+            ).abi,
+            functionname: "payProvider",
+            inputs: ["0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", 0, "105", 0],
+          }),
+        ],
+        userAddress,
+        {
+          value: ethers.utils.parseEther("1"),
+        }
+      )
+    ).to.be.revertedWith("ConnectGelatoProviderPayment.payProvider:!_provider");
+  });
+
+  it("#2: setProvider should change the provider address", async function () {
+    expect(await connectGelatoProviderPayment.getProvider()).to.be.equal(
+      ethers.constants.AddressZero
+    );
+
+    await connectGelatoProviderPayment.setProvider(providerAddress);
+
+    expect(await connectGelatoProviderPayment.getProvider()).to.be.equal(
+      providerAddress
+    );
+  });
+
+  it("#3: payProvider should pay to Provider 300 Dai", async function () {
     const providerDAIBalanceBefore = await DAI.balanceOf(providerAddress);
 
     await dsa.cast(
@@ -197,13 +241,7 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
             await hre.artifacts.readArtifact("ConnectGelatoProviderPayment")
           ).abi,
           functionname: "payProvider",
-          inputs: [
-            providerAddress,
-            DAI.address,
-            ethers.utils.parseUnits("300", 18),
-            0,
-            0,
-          ],
+          inputs: [DAI.address, ethers.utils.parseUnits("300", 18), 0, 0],
         }),
       ],
       userAddress
@@ -214,7 +252,7 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
     );
   });
 
-  it("#2: payProvider should pay to Provider 1 ether", async function () {
+  it("#4: payProvider should pay to Provider 1 ether", async function () {
     const providerBalanceBefore = await providerWallet.getBalance();
 
     await dsa.cast(
@@ -235,13 +273,7 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
             await hre.artifacts.readArtifact("ConnectGelatoProviderPayment")
           ).abi,
           functionname: "payProvider",
-          inputs: [
-            providerAddress,
-            "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-            0,
-            "105",
-            0,
-          ],
+          inputs: ["0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", 0, "105", 0],
         }),
       ],
       userAddress,
@@ -253,42 +285,5 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
     expect(await providerWallet.getBalance()).to.be.equal(
       providerBalanceBefore.add(ethers.utils.parseEther("1"))
     );
-  });
-
-  it("#3: payProvider should return error message ConnectGelatoProviderPayment.payProvider:INVALIDADDESS when provider is Zero Address", async function () {
-    await expect(
-      dsa.cast(
-        [connectBasic.address, connectGelatoProviderPayment.address],
-        [
-          await hre.run("abi-encode-withselector", {
-            abi: ConnectBasic.abi,
-            functionname: "deposit",
-            inputs: [
-              "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-              ethers.utils.parseEther("1"),
-              0,
-              "105",
-            ],
-          }),
-          await hre.run("abi-encode-withselector", {
-            abi: (
-              await hre.artifacts.readArtifact("ConnectGelatoProviderPayment")
-            ).abi,
-            functionname: "payProvider",
-            inputs: [
-              ethers.constants.AddressZero,
-              "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-              0,
-              "105",
-              0,
-            ],
-          }),
-        ],
-        userAddress,
-        {
-          value: ethers.utils.parseEther("1"),
-        }
-      )
-    ).to.be.revertedWith("ConnectGelatoProviderPayment.payProvider:!_provider");
   });
 });

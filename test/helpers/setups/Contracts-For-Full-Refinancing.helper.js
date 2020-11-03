@@ -3,10 +3,9 @@ const {ethers} = hre;
 
 const getContracts = require("./Common-Contracts.helper");
 
-async function getAllContracts() {
-  let dsaProviderModule;
+async function getAllContracts(providerAddress) {
   let connectGelatoData;
-  let contracts = await getContracts();
+  let contracts = await getContracts(providerAddress);
 
   const ConnectGelatoData = await ethers.getContractFactory(
     "ConnectGelatoDataForFullRefinance"
@@ -17,16 +16,6 @@ async function getAllContracts() {
   );
   await connectGelatoData.deployed();
 
-  const ProviderModuleDsa = await ethers.getContractFactory(
-    "ProviderModuleDsaFromMakerToCompound"
-  );
-  dsaProviderModule = await ProviderModuleDsa.deploy(
-    hre.network.config.GelatoCore,
-    contracts.connectGelatoProviderPayment.address
-  );
-  await dsaProviderModule.deployed();
-
-  contracts.dsaProviderModule = dsaProviderModule;
   contracts.connectGelatoData = connectGelatoData;
 
   return contracts;

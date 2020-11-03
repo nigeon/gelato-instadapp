@@ -68,8 +68,7 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
     function getDataAndCastForFromMakerToMaker(
         uint256 _vaultId,
         address _token,
-        string calldata _colType,
-        address _provider
+        string calldata _colType
     ) public payable {
         (
             address[] memory targets,
@@ -77,8 +76,7 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
         ) = _execPayloadForFullRefinanceFromMakerToMaker(
             _vaultId,
             _token,
-            _colType,
-            _provider
+            _colType
         );
 
         _cast(targets, datas);
@@ -86,17 +84,12 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
 
     function getDataAndCastForFromMakerToCompound(
         uint256 _vaultId,
-        address _token,
-        address _provider
+        address _token
     ) public payable {
         (
             address[] memory targets,
             bytes[] memory datas
-        ) = _execPayloadForFullRefinanceFromMakerToCompound(
-            _vaultId,
-            _token,
-            _provider
-        );
+        ) = _execPayloadForFullRefinanceFromMakerToCompound(_vaultId, _token);
 
         _cast(targets, datas);
     }
@@ -124,13 +117,11 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
     /// @notice Generate Task for a full refinancing between Maker to Compound.
     /// @param _vaultId Id of the unsafe vault of the client.
     /// @param _token  vault's col token address .
-    /// @param _provider address of the paying provider.
     /// @return targets : flashloan contract address
     /// @return datas : calldata for flashloan
     function _execPayloadForFullRefinanceFromMakerToCompound(
         uint256 _vaultId,
-        address _token,
-        address _provider
+        address _token
     ) internal view returns (address[] memory targets, bytes[] memory datas) {
         targets = new address[](1);
         targets[0] = INSTA_POOL_V2;
@@ -159,13 +150,7 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
             0
         );
         _datas[3] = _encodeBorrowCompound(DAI, wDaiDebtToMove, 0, 0);
-        _datas[4] = _encodePayGelatoProvider(
-            _provider,
-            _token,
-            gasFeesPaidFromCol,
-            0,
-            0
-        );
+        _datas[4] = _encodePayGelatoProvider(_token, gasFeesPaidFromCol, 0, 0);
         _datas[5] = _encodeFlashPayback(DAI, wDaiDebtToMove, 0, 0);
 
         datas = new bytes[](1);
@@ -182,14 +167,12 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
     /// @param _vaultId Id of the unsafe vault of the client.
     /// @param _token  vault's col token address .
     /// @param _colType colType of the new vault, exemple : ETH-B, ETH-A.
-    /// @param _provider address of the paying provider.
     /// @return targets : flashloan contract address
     /// @return datas : calldata for flashloan
     function _execPayloadForFullRefinanceFromMakerToMaker(
         uint256 _vaultId,
         address _token,
-        string calldata _colType,
-        address _provider
+        string calldata _colType
     ) internal view returns (address[] memory targets, bytes[] memory datas) {
         targets = new address[](1);
         targets[0] = INSTA_POOL_V2;
@@ -220,13 +203,7 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
             0
         );
         _datas[4] = _encodeBorrowDaiMakerVault(0, wDaiDebtToMove, 0, 0);
-        _datas[5] = _encodePayGelatoProvider(
-            _provider,
-            _token,
-            gasFeesPaidFromCol,
-            0,
-            0
-        );
+        _datas[5] = _encodePayGelatoProvider(_token, gasFeesPaidFromCol, 0, 0);
         _datas[6] = _encodeFlashPayback(DAI, wDaiDebtToMove, 0, 0);
 
         datas = new bytes[](1);

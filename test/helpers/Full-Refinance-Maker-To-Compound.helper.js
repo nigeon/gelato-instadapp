@@ -12,7 +12,7 @@ const userOpenDepositBorrowOnMakerVault = require("./setups/Open-Deposit-Borrow-
 const getWallets = require("./setups/Wallets.helper");
 const getConstants = require("./setups/Constants.helper");
 const getABI = require("./setups/ABI.helper");
-const getAllContracts = require("./setups/Contracts-For-Full-Refinancing-Maker-To-Compound.helper");
+const getAllContracts = require("./setups/Contracts-For-Full-Refinancing.helper");
 const enableGelatoConnectorsForFromMaker = require("./setups/Enabling-New-Connectors-For-Full-Refinance.helper");
 
 const ConnectGelatoDataForFullRefinanceABI = require("../../artifacts/contracts/contracts/connectors/ConnectGelatoDataForFullRefinance.sol/ConnectGelatoDataForFullRefinance.json")
@@ -20,7 +20,7 @@ const ConnectGelatoDataForFullRefinanceABI = require("../../artifacts/contracts/
 
 async function makerToCompoundSetup() {
   const wallets = await getWallets();
-  const contracts = await getAllContracts();
+  const contracts = await getAllContracts(wallets.providerAddress);
   const constants = await getConstants();
   let vaultId;
   // Gelato Testing environment setup.
@@ -103,7 +103,7 @@ async function providerWhiteListTaskForMakerToCompound(
     data: await hre.run("abi-encode-withselector", {
       abi: ConnectGelatoDataForFullRefinanceABI,
       functionname: "getDataAndCastForFromMakerToCompound",
-      inputs: [vaultId, constants.ETH, wallets.providerAddress],
+      inputs: [vaultId, constants.ETH],
     }),
     operation: GelatoCoreLib.Operation.Delegatecall,
   });

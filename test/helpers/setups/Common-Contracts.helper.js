@@ -16,8 +16,9 @@ const GetCdps = require("../../../pre-compiles/GetCdps.json");
 const IERC20 = require("../../../pre-compiles/IERC20.json");
 const CTokenInterface = require("../../../pre-compiles/CTokenInterface.json");
 const CompoundResolver = require("../../../pre-compiles/InstaCompoundResolver.json");
+const DsaProviderModuleABI = require("../../../pre-compiles/ProviderModuleDsa_ABI.json");
 
-async function getContracts() {
+async function getContracts(providerAddress) {
   // Deployed instances
   let connectGelato;
   let connectMaker;
@@ -35,6 +36,7 @@ async function getContracts() {
   let instaMapping;
   let instaConnectors;
   let compoundResolver;
+  let dsaProviderModule;
   // Contracts to deploy and use for local testing
   let conditionMakerVaultUnsafe;
   let connectGelatoProviderPayment;
@@ -99,6 +101,10 @@ async function getContracts() {
     CompoundResolver.abi,
     hre.network.config.CompoundResolver
   );
+  dsaProviderModule = await ethers.getContractAt(
+    DsaProviderModuleABI,
+    hre.network.config.ProviderModuleDsa
+  );
 
   // ===== Deploy Needed Contract ==================
 
@@ -118,7 +124,8 @@ async function getContracts() {
     "ConnectGelatoProviderPayment"
   );
   connectGelatoProviderPayment = await ConnectGelatoProviderPayment.deploy(
-    (await instaConnectors.connectorLength()).add(2)
+    (await instaConnectors.connectorLength()).add(2),
+    providerAddress
   );
   await connectGelatoProviderPayment.deployed();
 
@@ -150,6 +157,7 @@ async function getContracts() {
     connectGelatoData,
     debtBridgeFromMakerForFullRefinance,
     makerResolver,
+    dsaProviderModule,
   };
 }
 

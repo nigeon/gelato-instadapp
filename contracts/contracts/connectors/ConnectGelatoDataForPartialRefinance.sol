@@ -52,7 +52,6 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
         uint256 wMinColRatioB;
         address priceOracle;
         bytes oraclePayload;
-        address provider;
     }
 
     using GelatoBytes for bytes;
@@ -182,7 +181,6 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
         );
         _datas[3] = _encodeBorrowCompound(DAI, wDaiDebtToMove, 0, 0);
         _datas[4] = _encodePayGelatoProvider(
-            _payload.provider,
             _payload.token,
             gasFeesPaidFromCol,
             0,
@@ -264,7 +262,6 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
         );
         _datas[4] = _encodeBorrowDaiMakerVault(0, wDaiDebtToMove, 0, 0);
         _datas[5] = _encodePayGelatoProvider(
-            _payload.provider,
             _payload.token,
             gasFeesPaidFromCol,
             0,

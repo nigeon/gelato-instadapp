@@ -13,7 +13,7 @@ const userOpenDepositBorrowOnMakerVault = require("./setups/Open-Deposit-Borrow-
 const getWallets = require("./setups/Wallets.helper");
 const getConstants = require("./setups/Constants.helper");
 const getABI = require("./setups/ABI.helper");
-const getAllContracts = require("./setups/Contracts-For-Full-Refinancing-Maker-To-Maker.helper");
+const getAllContracts = require("./setups/Contracts-For-Full-Refinancing.helper");
 const enableGelatoConnectorsForFromMaker = require("./setups/Enabling-New-Connectors-For-Full-Refinance.helper");
 
 const ConnectGelatoDataForFullRefinanceABI = require("../../artifacts/contracts/contracts/connectors/ConnectGelatoDataForFullRefinance.sol/ConnectGelatoDataForFullRefinance.json")
@@ -21,7 +21,7 @@ const ConnectGelatoDataForFullRefinanceABI = require("../../artifacts/contracts/
 
 async function makerETHAToMakerETHBSetup() {
   const wallets = await getWallets();
-  const contracts = await getAllContracts();
+  const contracts = await getAllContracts(wallets.providerAddress);
   const constants = await getConstants();
   let vaultAId;
   // Gelato Testing environment setup.
@@ -109,7 +109,7 @@ async function providerWhiteListTaskForMakerETHAToMakerETHB(
     data: await hre.run("abi-encode-withselector", {
       abi: ConnectGelatoDataForFullRefinanceABI,
       functionname: "getDataAndCastForFromMakerToMaker",
-      inputs: [vaultId, constants.ETH, "ETH-B", wallets.providerAddress],
+      inputs: [vaultId, constants.ETH, "ETH-B"],
     }),
     operation: GelatoCoreLib.Operation.Delegatecall,
   });
