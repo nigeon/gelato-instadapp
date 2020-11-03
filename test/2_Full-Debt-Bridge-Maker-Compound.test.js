@@ -180,7 +180,7 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
     //#region EXPECTED OUTCOME
 
     const gasFeesPaidFromCol = ethers.utils
-      .parseUnits(String(1490779 + 14908 * 2), 0)
+      .parseUnits(String(1490779 + 14908 * 12), 0)
       .mul(gelatoGasPrice);
     const debtOnMakerBefore = await contracts.makerResolver.getMakerVaultDebt(
       vaultId
