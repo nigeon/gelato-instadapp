@@ -15,7 +15,7 @@ const getABI = require("./setups/ABI.helper");
 const getAllContracts = require("./setups/Contracts-For-Full-Refinancing-Maker-To-Compound.helper");
 const enableGelatoConnectorsForFromMaker = require("./setups/Enabling-New-Connectors-For-Full-Refinance.helper");
 
-const ConnectGelatoDataForFullRefinance = require("../../artifacts/contracts/contracts/connectors/ConnectGelatoDataForFullRefinance.sol/ConnectGelatoDataForFullRefinance.json")
+const ConnectGelatoDataForFullRefinanceABI = require("../../artifacts/contracts/contracts/connectors/ConnectGelatoDataForFullRefinance.sol/ConnectGelatoDataForFullRefinance.json")
   .abi;
 
 async function makerToCompoundSetup() {
@@ -101,7 +101,7 @@ async function providerWhiteListTaskForMakerToCompound(
   const debtBridgeCalculationForFullRefinance = new GelatoCoreLib.Action({
     addr: contracts.connectGelatoData.address,
     data: await hre.run("abi-encode-withselector", {
-      abi: ConnectGelatoDataForFullRefinance,
+      abi: ConnectGelatoDataForFullRefinanceABI,
       functionname: "getDataAndCastForFromMakerToCompound",
       inputs: [vaultId, constants.ETH, wallets.providerAddress],
     }),

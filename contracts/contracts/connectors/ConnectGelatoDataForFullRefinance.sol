@@ -68,7 +68,7 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
     function getDataAndCastForFromMakerToMaker(
         uint256 _vaultId,
         address _token,
-        string memory _colType,
+        string calldata _colType,
         address _provider
     ) public payable {
         (
@@ -188,7 +188,7 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
     function _execPayloadForFullRefinanceFromMakerToMaker(
         uint256 _vaultId,
         address _token,
-        string memory _colType,
+        string calldata _colType,
         address _provider
     ) internal view returns (address[] memory targets, bytes[] memory datas) {
         targets = new address[](1);

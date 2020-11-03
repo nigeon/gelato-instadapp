@@ -81,7 +81,7 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
 
     function getDataAndCastForFromMakerToMaker(
         PartialDebtBridgePayload calldata _payload,
-        string memory _colType
+        string calldata _colType
     ) public payable {
         (
             address[] memory targets,
@@ -145,7 +145,7 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
             uint256 wDaiDebtToMove,
             uint256 wColToWithdrawFromMaker,
             uint256 gasFeesPaidFromCol
-        ) = _computeDebtBridge(
+        ) = computeDebtBridge(
             _payload.vaultId,
             _payload.wMinColRatioMaker,
             _payload.wMinColRatioB,
@@ -216,7 +216,7 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
     /// @return datas : calldata for flashloan
     function _execPayloadForPartialRefinanceFromMakerToMaker(
         PartialDebtBridgePayload calldata _payload,
-        string memory _colType
+        string calldata _colType
     ) internal view returns (address[] memory targets, bytes[] memory datas) {
         targets = new address[](1);
         targets[0] = INSTA_POOL_V2;
@@ -225,7 +225,7 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
             uint256 wDaiDebtToMove,
             uint256 wColToWithdrawFromMaker,
             uint256 gasFeesPaidFromCol
-        ) = _computeDebtBridge(
+        ) = computeDebtBridge(
             _payload.vaultId,
             _payload.wMinColRatioMaker,
             _payload.wMinColRatioB,
@@ -296,14 +296,14 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
     /// @return wColToWithdrawFromMaker (wad) to: withdraw from Maker and deposit on B.
     /// @return gasFeesPaidFromCol Gelato automation-gas-fees paid from user's collateral
     // solhint-disable function-max-lines
-    function _computeDebtBridge(
+    function computeDebtBridge(
         uint256 _vaultId,
         uint256 _wMinColRatioMaker,
         uint256 _wMinColRatioB,
         address _priceOracle,
         bytes calldata _oraclePayload
     )
-        internal
+        public
         view
         returns (
             uint256 wDaiDebtToMove,
