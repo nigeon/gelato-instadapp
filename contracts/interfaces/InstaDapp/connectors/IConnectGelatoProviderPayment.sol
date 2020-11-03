@@ -4,7 +4,7 @@ pragma solidity 0.7.4;
 import {ConnectorInterface} from "../IInstaDapp.sol";
 
 interface IConnectGelatoProviderPayment is ConnectorInterface {
-    function getProvider() external returns (address);
+    function setProvider(address _provider) external;
 
     function payProvider(
         address _token,
@@ -12,4 +12,6 @@ interface IConnectGelatoProviderPayment is ConnectorInterface {
         uint256 _getId,
         uint256 _setId
     ) external payable;
+
+    function gelatoProvider() external view returns (address);
 }

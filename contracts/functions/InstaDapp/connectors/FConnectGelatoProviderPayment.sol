@@ -5,7 +5,6 @@ import {
     IConnectGelatoProviderPayment
 } from "../../../interfaces/InstaDapp/connectors/IConnectGelatoProviderPayment.sol";
 
-// solhint-disable-next-line
 function _encodePayGelatoProvider(
     address _token,
     uint256 _amt,

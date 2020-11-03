@@ -168,17 +168,19 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
           value: ethers.utils.parseEther("1"),
         }
       )
-    ).to.be.revertedWith("ConnectGelatoProviderPayment.payProvider:!_provider");
+    ).to.be.revertedWith(
+      "ConnectGelatoProviderPayment.payProvider:!_gelatoProvider"
+    );
   });
 
   it("#2: setProvider should change the provider address", async function () {
-    expect(await connectGelatoProviderPayment.getProvider()).to.be.equal(
+    expect(await connectGelatoProviderPayment.gelatoProvider()).to.be.equal(
       ethers.constants.AddressZero
     );
 
     await connectGelatoProviderPayment.setProvider(providerAddress);
 
-    expect(await connectGelatoProviderPayment.getProvider()).to.be.equal(
+    expect(await connectGelatoProviderPayment.gelatoProvider()).to.be.equal(
       providerAddress
     );
   });
