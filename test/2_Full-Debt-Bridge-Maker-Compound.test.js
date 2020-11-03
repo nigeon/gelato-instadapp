@@ -183,9 +183,9 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
       vaultId
     );
 
-    const gasFeesPaidFromCol = ethers.utils
-      .parseUnits(String(1800000 + 18000 * 12), 0)
-      .mul(gelatoGasPrice);
+    const gasFeesPaidFromCol = ethers.BigNumber.from(1850000).mul(
+      gelatoGasPrice
+    );
 
     const pricedCollateral = (
       await contracts.makerResolver.getMakerVaultCollateralBalance(vaultId)
@@ -220,7 +220,13 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
 
     expect(
       await contracts.gelatoCore.providerFunds(wallets.providerAddress)
-    ).to.be.gt(providerBalanceBeforeExecution);
+    ).to.be.gt(
+      providerBalanceBeforeExecution.sub(
+        gasFeesPaidFromCol
+          .mul(await contracts.gelatoCore.totalSuccessShare())
+          .div(100)
+      )
+    );
 
     // compound position of DSA on cDai and cEth
     const compoundPosition = await contracts.compoundResolver.getCompoundData(
