@@ -48,7 +48,7 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
     uint256 internal immutable _id;
     address internal immutable _connectGelatoProviderPayment;
 
-    uint256 public constant GAS_COST = 1490779 + (14908 * 12); // 1490779 + ~12% (Estimated Value)
+    uint256 public constant GAS_COST = 1800000 + (18000 * 12); // 1800000 + ~12% (Estimated Value)
 
     constructor(uint256 id, address connectGelatoProviderPayment) {
         _id = id;

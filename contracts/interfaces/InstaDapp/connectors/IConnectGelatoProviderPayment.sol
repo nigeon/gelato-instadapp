@@ -14,4 +14,7 @@ interface IConnectGelatoProviderPayment is ConnectorInterface {
     ) external payable;
 
     function gelatoProvider() external view returns (address);
+
+    // solhint-disable-next-line func-name-mixedcase
+    function GELATO_CORE() external pure returns (address);
 }

@@ -4,11 +4,11 @@ pragma solidity 0.7.4;
 import {sub, wmul, wdiv} from "../../vendor/DSMath.sol";
 
 function _wCalcCollateralToWithdraw(
-    uint256 _wMinColRatioMaker,
+    uint256 _wMinColRatioA,
     uint256 _wMinColRatioB,
     uint256 _wColPrice,
     uint256 _wPricedCol,
-    uint256 _wDaiDebtOnMaker
+    uint256 _wDebtOnA
 ) pure returns (uint256) {
     return
         wdiv(
@@ -16,13 +16,10 @@ function _wCalcCollateralToWithdraw(
                 _wPricedCol,
                 wdiv(
                     sub(
-                        wmul(_wMinColRatioMaker, _wPricedCol),
-                        wmul(
-                            _wMinColRatioMaker,
-                            wmul(_wMinColRatioB, _wDaiDebtOnMaker)
-                        )
+                        wmul(_wMinColRatioA, _wPricedCol),
+                        wmul(_wMinColRatioA, wmul(_wMinColRatioB, _wDebtOnA))
                     ),
-                    sub(_wMinColRatioMaker, _wMinColRatioB)
+                    sub(_wMinColRatioA, _wMinColRatioB)
                 )
             ),
             _wColPrice
@@ -30,25 +27,22 @@ function _wCalcCollateralToWithdraw(
 }
 
 function _wCalcDebtToRepay(
-    uint256 _wMinColRatioMaker,
+    uint256 _wMinColRatioA,
     uint256 _wMinColRatioB,
     uint256 _wPricedCol,
-    uint256 _wDaiDebtOnMaker
+    uint256 _wDebtOnA
 ) pure returns (uint256) {
     return
         sub(
-            _wDaiDebtOnMaker,
+            _wDebtOnA,
             wmul(
-                wdiv(1e18, _wMinColRatioMaker),
+                wdiv(1e18, _wMinColRatioA),
                 wdiv(
                     sub(
-                        wmul(_wMinColRatioMaker, _wPricedCol),
-                        wmul(
-                            _wMinColRatioMaker,
-                            wmul(_wMinColRatioB, _wDaiDebtOnMaker)
-                        )
+                        wmul(_wMinColRatioA, _wPricedCol),
+                        wmul(_wMinColRatioA, wmul(_wMinColRatioB, _wDebtOnA))
                     ),
-                    sub(_wMinColRatioMaker, _wMinColRatioB)
+                    sub(_wMinColRatioA, _wMinColRatioB)
                 )
             )
         );

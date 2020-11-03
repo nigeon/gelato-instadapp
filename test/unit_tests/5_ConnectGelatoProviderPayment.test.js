@@ -2,6 +2,8 @@ const {expect} = require("chai");
 const hre = require("hardhat");
 const {ethers} = hre;
 
+const GelatoCoreLib = require("@gelatonetwork/core");
+
 // #region Contracts ABI
 
 const ConnectMaker = require("../../pre-compiles/ConnectMaker.json");
@@ -28,6 +30,8 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
   let providerWallet;
   let providerAddress;
 
+  let gelatoCore;
+
   let instaList;
   let instaIndex;
   let DAI;
@@ -52,6 +56,11 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
 
     instaMaster = await ethers.provider.getSigner(
       hre.network.config.InstaMaster
+    );
+
+    gelatoCore = await ethers.getContractAt(
+      GelatoCoreLib.GelatoCore.abi,
+      hre.network.config.GelatoCore
     );
 
     // Hardhat default accounts prefilled with 100 ETH
@@ -253,7 +262,9 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
   });
 
   it("#4: payProvider should pay to Provider 1 ether", async function () {
-    const providerBalanceBefore = await providerWallet.getBalance();
+    const providerBalanceOnGelatoCoreBefore = await gelatoCore.providerFunds(
+      providerAddress
+    );
 
     await dsa.cast(
       [connectBasic.address, connectGelatoProviderPayment.address],
@@ -282,8 +293,8 @@ describe("ConnectGelatoProviderPayment Unit Test", function () {
       }
     );
 
-    expect(await providerWallet.getBalance()).to.be.equal(
-      providerBalanceBefore.add(ethers.utils.parseEther("1"))
+    expect(await gelatoCore.providerFunds(providerAddress)).to.be.equal(
+      providerBalanceOnGelatoCoreBefore.add(ethers.utils.parseEther("1"))
     );
   });
 });

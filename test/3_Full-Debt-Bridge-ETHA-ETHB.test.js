@@ -183,19 +183,22 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     // by a debt refinancing in compound.
 
     //#region EXPECTED OUTCOME
-
-    const gasFeesPaidFromCol = ethers.utils
-      .parseUnits(String(1490779 + 14908 * 12), 0)
-      .mul(gelatoGasPrice);
     const debtOnMakerBefore = await contracts.makerResolver.getMakerVaultDebt(
       vaultAId
     );
+
+    const gasFeesPaidFromCol = ethers.utils
+      .parseUnits(String(1800000 + 18000 * 12), 0)
+      .mul(gelatoGasPrice);
+
     const pricedCollateral = (
       await contracts.makerResolver.getMakerVaultCollateralBalance(vaultAId)
     ).sub(gasFeesPaidFromCol);
 
     //#endregion
-    const providerBalanceBeforeExecution = await wallets.providerWallet.getBalance();
+    const providerBalanceBeforeExecution = await contracts.gelatoCore.providerFunds(
+      wallets.providerAddress
+    );
 
     await expect(
       contracts.gelatoCore.connect(wallets.executorWallet).exec(taskReceipt, {
@@ -233,9 +236,9 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
       vaultBId
     );
 
-    expect(await wallets.providerWallet.getBalance()).to.be.gt(
-      providerBalanceBeforeExecution
-    );
+    expect(
+      await contracts.gelatoCore.providerFunds(wallets.providerAddress)
+    ).to.be.gt(providerBalanceBeforeExecution);
 
     // Estimated amount to borrowed token should be equal to the actual one read on compound contracts
     expect(debtOnMakerBefore).to.be.equal(debtOnMakerVaultB);
