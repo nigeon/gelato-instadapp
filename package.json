@@ -12,7 +12,7 @@
     "lint": "eslint --cache . && yarn lint:sol",
     "lint:sol": "solhint 'contracts/**/*.sol'",
     "lint:fix": "eslint --cache --fix . && solhint --fix contracts/**/*.sol",
-    "test": "yarn compile && npx hardhat test",
+    "test": "npx hardhat test",
     "debug": "DEBUG=true yarn compile && npx hardhat test"
   },
   "devDependencies": {
@@ -27,6 +27,7 @@
     "ethers": "5.0.19",
     "hardhat": "2.0.2",
     "hardhat-deploy": "0.7.0-beta.28",
+    "hardhat-deploy-ethers": "^0.3.0-beta.5",
     "husky": ">=4",
     "lint-staged": "10.5.1",
     "prettier": "2.1.2",

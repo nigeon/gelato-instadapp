@@ -1,6 +1,6 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {ethers} = hre;
+const {deployments, ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
 // #region Contracts ABI and Constants
@@ -23,9 +23,6 @@ const GetCdps = require("../pre-compiles/GetCdps.json");
 const IERC20 = require("../pre-compiles/IERC20.json");
 const CTokenInterface = require("../pre-compiles/CTokenInterface.json");
 const CompoundResolver = require("../pre-compiles/InstaCompoundResolver.json");
-const PriceOracleResolverABI = require("../artifacts/contracts/contracts/resolvers/PriceOracleResolver.sol/PriceOracleResolver.json")
-  .abi;
-
 const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const GAS_LIMIT = "4000000";
 const GAS_PRICE_CEIL = ethers.utils.parseUnits("1000", "gwei");
@@ -124,10 +121,10 @@ describe("Debt Bridge with External Provider", function () {
   // Wallet to use for local testing
   let userWallet;
   let userAddress;
-  let providerWallet;
-  let providerAddress;
-  let executorWallet;
-  let executorAddress;
+  let gelatoProviderWallet;
+  let gelatoProviderAddress;
+  let gelatoExecutorWallet;
+  let gelatoExecutorAddress;
 
   // Deployed instances
   let connectGelato;
@@ -164,10 +161,14 @@ describe("Debt Bridge with External Provider", function () {
 
   before(async function () {
     // Get Test Wallet for local testnet
-    [userWallet, providerWallet, executorWallet] = await ethers.getSigners();
+    [
+      userWallet,
+      gelatoProviderWallet,
+      gelatoExecutorWallet,
+    ] = await ethers.getSigners();
     userAddress = await userWallet.getAddress();
-    providerAddress = await providerWallet.getAddress();
-    executorAddress = await executorWallet.getAddress();
+    gelatoProviderAddress = await gelatoProviderWallet.getAddress();
+    gelatoExecutorAddress = await gelatoExecutorWallet.getAddress();
 
     instaMaster = await ethers.provider.getSigner(
       hre.network.config.InstaMaster
@@ -363,11 +364,13 @@ describe("Debt Bridge with External Provider", function () {
     // For safety measure Gelato ask the executor to stake a minimum
     // amount.
 
-    await gelatoCore.connect(executorWallet).stakeExecutor({
+    await gelatoCore.connect(gelatoExecutorWallet).stakeExecutor({
       value: await gelatoCore.minExecutorStake(),
     });
 
-    expect(await gelatoCore.isExecutorMinStaked(executorAddress)).to.be.true;
+    expect(
+      await gelatoCore.isExecutorMinStaked(gelatoExecutorAddress)
+    ).to.be.true;
 
     //#endregion
 
@@ -384,12 +387,14 @@ describe("Debt Bridge with External Provider", function () {
     );
 
     await expect(
-      gelatoCore.connect(providerWallet).provideFunds(providerAddress, {
-        value: TASK_AUTOMATION_FUNDS,
-      })
+      gelatoCore
+        .connect(gelatoProviderWallet)
+        .provideFunds(gelatoProviderAddress, {
+          value: TASK_AUTOMATION_FUNDS,
+        })
     ).to.emit(gelatoCore, "LogFundsProvided");
 
-    expect(await gelatoCore.providerFunds(providerAddress)).to.be.equal(
+    expect(await gelatoCore.providerFunds(gelatoProviderAddress)).to.be.equal(
       TASK_AUTOMATION_FUNDS
     );
 
@@ -402,13 +407,13 @@ describe("Debt Bridge with External Provider", function () {
 
     await expect(
       gelatoCore
-        .connect(providerWallet)
-        .providerAssignsExecutor(executorAddress)
+        .connect(gelatoProviderWallet)
+        .providerAssignsExecutor(gelatoExecutorAddress)
     ).to.emit(gelatoCore, "LogProviderAssignedExecutor");
 
-    expect(await gelatoCore.executorByProvider(providerAddress)).to.be.equal(
-      executorAddress
-    );
+    expect(
+      await gelatoCore.executorByProvider(gelatoProviderAddress)
+    ).to.be.equal(gelatoExecutorAddress);
 
     //#endregion
 
@@ -420,14 +425,14 @@ describe("Debt Bridge with External Provider", function () {
 
     await expect(
       gelatoCore
-        .connect(providerWallet)
+        .connect(gelatoProviderWallet)
         .addProviderModules([dsaProviderModule.address])
     ).to.emit(gelatoCore, "LogProviderModuleAdded");
 
     expect(
       await gelatoCore
-        .connect(providerWallet)
-        .isModuleProvided(providerAddress, dsaProviderModule.address)
+        .connect(gelatoProviderWallet)
+        .isModuleProvided(gelatoProviderAddress, dsaProviderModule.address)
     ).to.be.true;
 
     //#endregion
@@ -546,7 +551,7 @@ describe("Debt Bridge with External Provider", function () {
           MIN_COL_RATIO_B,
           priceOracleResolver.address,
           await hre.run("abi-encode-withselector", {
-            abi: PriceOracleResolverABI,
+            abi: (await deployments.getArtifcat("PriceOracleResolver")).abi,
             functionname: "getMockPrice",
             inputs: [userAddress],
           }),
@@ -636,7 +641,7 @@ describe("Debt Bridge with External Provider", function () {
       data: await hre.run("abi-encode-withselector", {
         abi: ConnectGelatoProviderPaymentABI,
         functionname: "payProvider",
-        inputs: [providerAddress, ETH, 0, "605", 0],
+        inputs: [gelatoProviderAddress, ETH, 0, "605", 0],
       }),
       operation: GelatoCoreLib.Operation.Delegatecall,
     });
@@ -655,26 +660,26 @@ describe("Debt Bridge with External Provider", function () {
 
     await expect(
       gelatoCore
-        .connect(providerWallet)
+        .connect(gelatoProviderWallet)
         .provideTaskSpecs([connectGelatoFullDebtBridgeFromMakerTaskSpec])
     ).to.emit(gelatoCore, "LogTaskSpecProvided");
 
     expect(
       await gelatoCore
-        .connect(providerWallet)
+        .connect(gelatoProviderWallet)
         .isTaskSpecProvided(
-          providerAddress,
+          gelatoProviderAddress,
           connectGelatoFullDebtBridgeFromMakerTaskSpec
         )
     ).to.be.equal("OK");
 
     expect(
       await gelatoCore
-        .connect(providerWallet)
+        .connect(gelatoProviderWallet)
         .taskSpecGasPriceCeil(
-          providerAddress,
+          gelatoProviderAddress,
           await gelatoCore
-            .connect(providerWallet)
+            .connect(gelatoProviderWallet)
             .hashTaskSpec(connectGelatoFullDebtBridgeFromMakerTaskSpec)
         )
     ).to.be.equal(gasPriceCeil);
@@ -705,7 +710,7 @@ describe("Debt Bridge with External Provider", function () {
         vaultId,
         priceOracleResolver.address,
         await hre.run("abi-encode-withselector", {
-          abi: PriceOracleResolverABI,
+          abi: (await deployments.getArtifact("PriceOracleResolver")).abi,
           functionname: "getMockPrice",
           inputs: [userAddress],
         }),
@@ -720,7 +725,7 @@ describe("Debt Bridge with External Provider", function () {
     });
 
     const gelatoExternalProvider = new GelatoCoreLib.GelatoProvider({
-      addr: providerAddress,
+      addr: gelatoProviderAddress,
       module: dsaProviderModule.address,
     });
 
@@ -769,7 +774,7 @@ describe("Debt Bridge with External Provider", function () {
 
     expect(
       await gelatoCore
-        .connect(executorWallet)
+        .connect(gelatoExecutorWallet)
         .canExec(taskReceipt, GAS_LIMIT, gelatoGasPrice)
     ).to.be.equal("ConditionNotOk:MakerVaultNotUnsafe");
 
@@ -778,7 +783,7 @@ describe("Debt Bridge with External Provider", function () {
 
     expect(
       await gelatoCore
-        .connect(executorWallet)
+        .connect(gelatoExecutorWallet)
         .canExec(taskReceipt, GAS_LIMIT, gelatoGasPrice)
     ).to.be.equal("OK");
 
@@ -826,10 +831,10 @@ describe("Debt Bridge with External Provider", function () {
     //console.log(String(wdiv(pricedCollateral.sub(wmul(expectedColWithdrawAmount, latestPrice).add(gasFeesPaidFromCol)),debt.sub(expectedBorAmountToPayBack))));
 
     //#endregion
-    const providerBalanceBeforeExecution = await providerWallet.getBalance();
+    const providerBalanceBeforeExecution = await gelatoProviderWallet.getBalance();
 
     await expect(
-      gelatoCore.connect(executorWallet).exec(taskReceipt, {
+      gelatoCore.connect(gelatoExecutorWallet).exec(taskReceipt, {
         gasPrice: gelatoGasPrice, // Exectutor must use gelatoGasPrice (Chainlink fast gwei)
         gasLimit: GAS_LIMIT,
       })
@@ -837,7 +842,7 @@ describe("Debt Bridge with External Provider", function () {
 
     // 🚧 For Debugging:
     // const txResponse2 = await gelatoCore
-    //   .connect(providerWallet)
+    //   .connect(gelatoProviderWallet)
     //   .exec(taskReceipt, {
     //     gasPrice: gelatoGasPrice,
     //     gasLimit: GAS_LIMIT,
@@ -850,7 +855,7 @@ describe("Debt Bridge with External Provider", function () {
     // }
     // await GelatoCoreLib.sleep(10000);
 
-    expect(await providerWallet.getBalance()).to.be.gt(
+    expect(await gelatoProviderWallet.getBalance()).to.be.gt(
       providerBalanceBeforeExecution
     );
 

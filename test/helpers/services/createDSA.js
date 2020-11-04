@@ -4,7 +4,7 @@ const {ethers} = hre;
 
 const InstaAccount = require("../../../pre-compiles/InstaAccount.json");
 
-async function userCreateADSA(userAddress, instaIndex, instaList) {
+async function createDSA(userAddress, instaIndex, instaList) {
   //#region User create a DeFi Smart Account
 
   // User create a Instadapp DeFi Smart Account
@@ -19,7 +19,7 @@ async function userCreateADSA(userAddress, instaIndex, instaList) {
     "LogAccountCreated"
   );
   const dsaID = dsaAccountCount.add(1);
-  await expect(await instaList.accounts()).to.be.equal(dsaID);
+  expect(await instaList.accounts()).to.be.equal(dsaID);
 
   // Instantiate the DSA
   const dsa = await ethers.getContractAt(
@@ -32,4 +32,4 @@ async function userCreateADSA(userAddress, instaIndex, instaList) {
   //#endregion
 }
 
-module.exports = userCreateADSA;
+module.exports = createDSA;

@@ -1,6 +1,6 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {ethers} = hre;
+const {deployments, ethers} = hre;
 
 // #region Contracts ABI
 
@@ -40,7 +40,10 @@ describe("ConditionMakerVaultUnsafe Unit Test", function () {
   let cdpId;
   let dsa;
 
-  before(async function () {
+  beforeEach(async function () {
+    // Deploy contract dependencies
+    await deployments.fixture();
+
     // Get Test Wallet for local testnet
     [userWallet] = await ethers.getSigners();
     userAddress = await userWallet.getAddress();
@@ -69,20 +72,10 @@ describe("ConditionMakerVaultUnsafe Unit Test", function () {
     DAI = await ethers.getContractAt(IERC20.abi, hre.network.config.DAI);
 
     // ========== Test Setup ============
-
-    const PriceOracleResolver = await ethers.getContractFactory(
-      "PriceOracleResolver"
-    );
-
-    priceOracleResolver = await PriceOracleResolver.deploy();
-    await priceOracleResolver.deployed();
-
-    const ConditionMakerVaultUnsafe = await ethers.getContractFactory(
+    priceOracleResolver = await ethers.getContract("PriceOracleResolver");
+    conditionMakerVaultUnsafe = await ethers.getContract(
       "ConditionMakerVaultUnsafe"
     );
-
-    conditionMakerVaultUnsafe = await ConditionMakerVaultUnsafe.deploy();
-    await conditionMakerVaultUnsafe.deployed();
 
     // Create DeFi Smart Account
 

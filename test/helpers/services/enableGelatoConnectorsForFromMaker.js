@@ -22,7 +22,7 @@ async function enableGelatoConnectorsForFromMaker(
 
   await userWallet.sendTransaction({
     to: hre.network.config.InstaMaster,
-    value: ethers.utils.parseEther("0.1"),
+    value: ethers.utils.parseEther("0.01"),
   });
 
   await hre.network.provider.request({

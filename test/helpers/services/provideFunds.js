@@ -1,7 +1,7 @@
 const {expect} = require("chai");
 
-async function providerDoFunding(
-  providerWallet,
+async function provideFunds(
+  gelatoProviderWallet,
   gelatoCore,
   gasLimit,
   gasPriceCeil
@@ -13,7 +13,7 @@ async function providerDoFunding(
   // Provider. At each provider's task execution, some funds (approximatively
   // the gas cost value) will be transfered to the Executor stake.
 
-  let providerAddress = await providerWallet.getAddress();
+  let gelatoProviderAddress = await gelatoProviderWallet.getAddress();
 
   const TASK_AUTOMATION_FUNDS = await gelatoCore.minExecProviderFunds(
     gasLimit,
@@ -21,16 +21,18 @@ async function providerDoFunding(
   );
 
   await expect(
-    gelatoCore.connect(providerWallet).provideFunds(providerAddress, {
-      value: TASK_AUTOMATION_FUNDS,
-    })
+    gelatoCore
+      .connect(gelatoProviderWallet)
+      .provideFunds(gelatoProviderAddress, {
+        value: TASK_AUTOMATION_FUNDS,
+      })
   ).to.emit(gelatoCore, "LogFundsProvided");
 
-  expect(await gelatoCore.providerFunds(providerAddress)).to.be.equal(
+  expect(await gelatoCore.providerFunds(gelatoProviderAddress)).to.be.equal(
     TASK_AUTOMATION_FUNDS
   );
 
   //#endregion
 }
 
-module.exports = providerDoFunding;
+module.exports = provideFunds;

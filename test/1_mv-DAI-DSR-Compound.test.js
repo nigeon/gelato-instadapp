@@ -2,15 +2,13 @@
 // => only dependency we need is "chai"
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {ethers} = hre;
+const {deployments, ethers} = hre;
+
 const GelatoCoreLib = require("@gelatonetwork/core");
 //const { sleep } = GelatoCoreLib;
 
 // Constants
 const DAI_100 = ethers.utils.parseUnits("100", 18);
-const APY_2_PERCENT_IN_SECONDS = ethers.BigNumber.from(
-  "1000000000627937192491029810"
-);
 
 // Contracts
 const InstaIndex = require("../pre-compiles/InstaIndex.json");
@@ -48,6 +46,9 @@ describe("Move DAI lending from DSR to Compound", function () {
   let conditionCompareUints;
 
   before(async function () {
+    // Reset back to a fresh forked state during runtime
+    await deployments.fixture();
+
     // Get Test Wallet for local testnet
     [userWallet] = await ethers.getSigners();
     userAddress = await userWallet.getAddress();
@@ -107,21 +108,14 @@ describe("Move DAI lending from DSR to Compound", function () {
     );
     expect(await dsa.isAuth(gelatoCore.address)).to.be.true;
 
-    // Deploy Mocks for Testing
-    const MockCDAI = await ethers.getContractFactory("MockCDAI");
-    mockCDAI = await MockCDAI.deploy(APY_2_PERCENT_IN_SECONDS);
-    await mockCDAI.deployed();
+    // Deployed Mocks for Testing
+    mockCDAI = await ethers.getContract("MockCDAI");
+    mockDSR = await ethers.getContract("MockDSR");
 
-    const MockDSR = await ethers.getContractFactory("MockDSR");
-    mockDSR = await MockDSR.deploy(APY_2_PERCENT_IN_SECONDS);
-    await mockDSR.deployed();
-
-    // Deploy Gelato Conditions for Testing
-    const ConditionCompareUintsFromTwoSources = await ethers.getContractFactory(
+    // Deployed Gelato Conditions for Testing
+    conditionCompareUints = await ethers.getContract(
       "ConditionCompareUintsFromTwoSources"
     );
-    conditionCompareUints = await ConditionCompareUintsFromTwoSources.deploy();
-    await conditionCompareUints.deployed();
 
     // ===== Dapp Dependencies SETUP ==================
     // This test assumes our user has 100 DAI deposited in Maker DSR
@@ -351,7 +345,7 @@ describe("Move DAI lending from DSR to Compound", function () {
     );
 
     // Let's first check if our Task is executable. Since both MockDSR and MockCDAI
-    // start with a normalized per second rate of APY_2_PERCENT_IN_SECONDS
+    // are deployed with a normalized per second rate of APY_2_PERCENT_IN_SECONDS
     // (1000000000627937192491029810 in 10**27 precision) in both of them, we
     // expect ConditionNotOk because ANotGreaterOrEqualToBbyMinspread.
     // Check out contracts/ConditionCompareUintsFromTwoSources.sol to see how

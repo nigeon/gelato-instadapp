@@ -1,7 +1,7 @@
 const {expect} = require("chai");
 
-async function providerAddCustomModuleForPayment(
-  providerWallet,
+async function addProviderModuleDSA(
+  gelatoProviderWallet,
   gelatoCore,
   dsaProviderModuleAddr
 ) {
@@ -11,21 +11,21 @@ async function providerAddCustomModuleForPayment(
   // payload by adding some specificity like his address to the
   // Payment connector for receiving payment of User.
 
-  let providerAddress = await providerWallet.getAddress();
+  const gelatoProviderAddress = await gelatoProviderWallet.getAddress();
 
   await expect(
     gelatoCore
-      .connect(providerWallet)
+      .connect(gelatoProviderWallet)
       .addProviderModules([dsaProviderModuleAddr])
   ).to.emit(gelatoCore, "LogProviderModuleAdded");
 
   expect(
     await gelatoCore
-      .connect(providerWallet)
-      .isModuleProvided(providerAddress, dsaProviderModuleAddr)
+      .connect(gelatoProviderWallet)
+      .isModuleProvided(gelatoProviderAddress, dsaProviderModuleAddr)
   ).to.be.true;
 
   //#endregion
 }
 
-module.exports = providerAddCustomModuleForPayment;
+module.exports = addProviderModuleDSA;

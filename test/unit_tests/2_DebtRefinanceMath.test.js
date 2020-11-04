@@ -1,6 +1,6 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {ethers} = hre;
+const {deployments, ethers} = hre;
 
 const WAD = ethers.utils.parseUnits("1", 18);
 
@@ -24,15 +24,10 @@ describe("Debt Partial Refinance Math Unit Test", function () {
   }
 
   let fGelatoDebtBridgeMock;
-  before(async function () {
-    const FGelatoDebtBridgeMock = await ethers.getContractFactory(
-      "FGelatoDebtBridgeMock"
-    );
-    fGelatoDebtBridgeMock = await FGelatoDebtBridgeMock
-      .deploy
-      //ethers.constants.AddressZero
-      ();
-    fGelatoDebtBridgeMock.deployed();
+  beforeEach(async function () {
+    await deployments.fixture();
+
+    fGelatoDebtBridgeMock = await ethers.getContract("FGelatoDebtBridgeMock");
   });
 
   it("#1: wCalcCollateralToWithdraw should return the amount of collateral to withdraw on protocol 1 and to put on protocol 2", async function () {

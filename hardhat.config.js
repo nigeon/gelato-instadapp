@@ -3,6 +3,7 @@ const {task, types} = require("hardhat/config");
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-deploy");
+require("hardhat-deploy-ethers");
 
 // Libraries
 const assert = require("assert");
@@ -30,6 +31,9 @@ module.exports = {
     deployer: {
       default: 0,
       mainnet: DEPLOYER,
+    },
+    user: {
+      default: 0,
     },
     gelatoProvider: {
       default: 1,

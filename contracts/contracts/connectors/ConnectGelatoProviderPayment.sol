@@ -38,10 +38,20 @@ contract ConnectGelatoProviderPayment is
     uint256 internal immutable _id;
     address internal immutable _this;
 
-    constructor(uint256 id, address _gelatoProvider) {
+    constructor(uint256 id, address _gelatoProvider)
+        noAddressZeroProvider(_gelatoProvider)
+    {
         _id = id;
         _this = address(this);
         gelatoProvider = _gelatoProvider;
+    }
+
+    modifier noAddressZeroProvider(address _gelatoProvider) {
+        require(
+            _gelatoProvider != address(0x0),
+            "ConnectGelatoProviderPayment.noAddressZeroProvider"
+        );
+        _;
     }
 
     /// @dev Connector Details
@@ -55,7 +65,12 @@ contract ConnectGelatoProviderPayment is
     }
 
     /// @notice Set the gelatoProvider address that will be paid for executing a task
-    function setProvider(address _gelatoProvider) external override onlyOwner {
+    function setProvider(address _gelatoProvider)
+        external
+        override
+        onlyOwner
+        noAddressZeroProvider(_gelatoProvider)
+    {
         gelatoProvider = _gelatoProvider;
     }
 
@@ -77,10 +92,6 @@ contract ConnectGelatoProviderPayment is
     ) external payable override {
         address provider = IConnectGelatoProviderPayment(_this)
             .gelatoProvider();
-        require(
-            provider != address(0x0),
-            "ConnectGelatoProviderPayment.payProvider:!provider"
-        );
 
         uint256 amt = _getUint(_getId, _amt);
         _setUint(_setId, amt);

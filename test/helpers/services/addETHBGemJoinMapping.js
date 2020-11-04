@@ -2,11 +2,7 @@ const {expect} = require("chai");
 const hre = require("hardhat");
 const {ethers} = hre;
 
-async function masterAddETHBOnGemJoinMapping(
-  userWallet,
-  instaMapping,
-  instaMaster
-) {
+async function addETHBGemJoinMapping(userWallet, instaMapping, instaMaster) {
   await userWallet.sendTransaction({
     to: hre.network.config.InstaMaster,
     value: ethers.utils.parseEther("0.1"),
@@ -21,6 +17,11 @@ async function masterAddETHBOnGemJoinMapping(
   await expect(
     instaMapping.connect(instaMaster).addGemJoinMapping([ethBGemJoin])
   ).to.emit(instaMapping, "LogAddGemJoinMapping");
+
+  await hre.network.provider.request({
+    method: "hardhat_stopImpersonatingAccount",
+    params: [await instaMaster.getAddress()],
+  });
 }
 
-module.exports = masterAddETHBOnGemJoinMapping;
+module.exports = addETHBGemJoinMapping;

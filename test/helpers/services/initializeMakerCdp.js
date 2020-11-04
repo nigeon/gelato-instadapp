@@ -3,7 +3,7 @@ const hre = require("hardhat");
 
 const ConnectMaker = require("../../../pre-compiles/ConnectMaker.json");
 
-async function userOpenDepositBorrowOnMakerVault(
+async function initializeMakerCdp(
   userAddress,
   DAI,
   dsa,
@@ -63,4 +63,4 @@ async function userOpenDepositBorrowOnMakerVault(
   return vaultId;
 }
 
-module.exports = userOpenDepositBorrowOnMakerVault;
+module.exports = initializeMakerCdp;

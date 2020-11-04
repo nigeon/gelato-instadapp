@@ -1,9 +1,9 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {ethers} = hre;
+const {deployments, ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
-const makerETHAToMakerETHBSetup = require("./helpers/Full-Refinance-Maker-To-Maker.helper");
+const setupFullRefinanceMakerToMaker = require("./helpers/setupFullRefinanceMakerToMaker");
 
 // This test showcases how to submit a task refinancing a Users debt position from
 // Maker to Compound using Gelato
@@ -30,8 +30,9 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
 
   before(async function () {
     // Reset back to a fresh forked state during runtime
-    await hre.run("hardhatReset");
-    const result = await makerETHAToMakerETHBSetup();
+    await deployments.fixture();
+
+    const result = await setupFullRefinanceMakerToMaker();
 
     wallets = result.wallets;
     contracts = result.contracts;
@@ -83,7 +84,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
         vaultAId,
         contracts.priceOracleResolver.address,
         await hre.run("abi-encode-withselector", {
-          abi: ABI.PriceOracleResolverABI,
+          abi: (await deployments.getArtifact("PriceOracleResolver")).abi,
           functionname: "getMockPrice",
           inputs: [wallets.userAddress],
         }),
@@ -98,7 +99,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     });
 
     const gelatoExternalProvider = new GelatoCoreLib.GelatoProvider({
-      addr: wallets.providerAddress, // Gelato Provider Address
+      addr: wallets.gelatoProviderAddress, // Gelato Provider Address
       module: contracts.dsaProviderModule.address, // Gelato DSA module
     });
 
@@ -159,7 +160,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
 
     expect(
       await contracts.gelatoCore
-        .connect(wallets.executorWallet)
+        .connect(wallets.gelatoExecutorWallet)
         .canExec(taskReceipt, constants.GAS_LIMIT, gelatoGasPrice)
     ).to.be.equal("ConditionNotOk:MakerVaultNotUnsafe");
 
@@ -170,7 +171,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
 
     expect(
       await contracts.gelatoCore
-        .connect(wallets.executorWallet)
+        .connect(wallets.gelatoExecutorWallet)
         .canExec(taskReceipt, constants.GAS_LIMIT, gelatoGasPrice)
     ).to.be.equal("OK");
 
@@ -197,19 +198,21 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
 
     //#endregion
     const providerBalanceBeforeExecution = await contracts.gelatoCore.providerFunds(
-      wallets.providerAddress
+      wallets.gelatoProviderAddress
     );
 
     await expect(
-      contracts.gelatoCore.connect(wallets.executorWallet).exec(taskReceipt, {
-        gasPrice: gelatoGasPrice, // Exectutor must use gelatoGasPrice (Chainlink fast gwei)
-        gasLimit: constants.GAS_LIMIT,
-      })
+      contracts.gelatoCore
+        .connect(wallets.gelatoExecutorWallet)
+        .exec(taskReceipt, {
+          gasPrice: gelatoGasPrice, // Exectutor must use gelatoGasPrice (Chainlink fast gwei)
+          gasLimit: constants.GAS_LIMIT,
+        })
     ).to.emit(contracts.gelatoCore, "LogExecSuccess");
 
     // 🚧 For Debugging:
     // const txResponse2 = await contracts.gelatoCore
-    //   .connect(wallets.executorWallet)
+    //   .connect(wallets.gelatoExecutorWallet)
     //   .exec(taskReceipt, {
     //     gasPrice: gelatoGasPrice,
     //     gasLimit: constants.GAS_LIMIT,
@@ -237,7 +240,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     );
 
     expect(
-      await contracts.gelatoCore.providerFunds(wallets.providerAddress)
+      await contracts.gelatoCore.providerFunds(wallets.gelatoProviderAddress)
     ).to.be.gt(
       providerBalanceBeforeExecution.sub(
         gasFeesPaidFromCol
