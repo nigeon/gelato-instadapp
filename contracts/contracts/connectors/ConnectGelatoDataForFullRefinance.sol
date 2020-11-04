@@ -143,8 +143,8 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
         _targets[2] = CONNECT_MAKER; // open ETH-B vault
         _targets[3] = CONNECT_MAKER; // deposit
         _targets[4] = CONNECT_MAKER; // borrow
-        _targets[5] = _connectGelatoProviderPayment;
-        _targets[6] = targets[0];
+        _targets[5] = _connectGelatoProviderPayment; // payProvider
+        _targets[6] = INSTA_POOL_V2; // flashPayback
 
         bytes[] memory _datas = new bytes[](7);
         _datas[0] = _encodePaybackMakerVault(_vaultId, uint256(-1), 0, 0);
@@ -188,8 +188,8 @@ contract ConnectGelatoDataForFullRefinance is ConnectorInterface {
         _targets[1] = CONNECT_MAKER; // withdraw
         _targets[2] = CONNECT_COMPOUND; // deposit
         _targets[3] = CONNECT_COMPOUND; // borrow
-        _targets[4] = _connectGelatoProviderPayment;
-        _targets[5] = INSTA_POOL_V2;
+        _targets[4] = _connectGelatoProviderPayment; // payProvider
+        _targets[5] = INSTA_POOL_V2; // flashPayback
 
         bytes[] memory _datas = new bytes[](6);
         _datas[0] = _encodePaybackMakerVault(_vaultId, uint256(-1), 0, 0);

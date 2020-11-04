@@ -2,6 +2,7 @@
 const {task, types} = require("hardhat/config");
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
+require("hardhat-deploy");
 
 // Libraries
 const assert = require("assert");
@@ -15,11 +16,29 @@ require("dotenv").config();
 // assert.ok(INFURA_ID, "no Infura ID in process.env");
 const ALCHEMY_ID = process.env.ALCHEMY_ID;
 assert.ok(ALCHEMY_ID, "no Alchemy ID in process.env");
+
+const DEPLOYER = "0xe1F076849B781b1395Fd332dC1758Dbc129be6EC"; // Gelato-Luis
+const DEPLOYER_PK_MAINNET = process.env.DEPLOYER_PK_MAINNET;
+
 const INSTA_MASTER = "0xb1DC62EC38E6E3857a887210C38418E4A17Da5B2";
 
 // ================================= CONFIG =========================================
 module.exports = {
   defaultNetwork: "hardhat",
+  // hardhat-deploy
+  namedAccounts: {
+    deployer: {
+      default: 0,
+      mainnet: DEPLOYER,
+    },
+    gelatoProvider: {
+      default: 1,
+      mainnet: DEPLOYER,
+    },
+    gelatoExecutor: {
+      default: 2,
+    },
+  },
   networks: {
     hardhat: {
       // Standard config
@@ -52,6 +71,11 @@ module.exports = {
       DssCdpManager: "0x5ef30b9986345249bc32d8928B7ee64DE9435E39",
       GetCdps: "0x36a724Bd100c39f0Ea4D3A20F7097eE01A8Ff573",
       ProviderModuleDsa: "0x0C25452d20cdFeEd2983fa9b9b9Cf4E81D6f2fE2",
+    },
+    mainnet: {
+      accounts: DEPLOYER_PK_MAINNET ? [DEPLOYER_PK_MAINNET] : [],
+      chainId: 1,
+      url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_ID}`,
     },
   },
   solidity: {

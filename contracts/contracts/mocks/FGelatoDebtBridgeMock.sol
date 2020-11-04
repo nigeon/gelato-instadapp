@@ -4,7 +4,7 @@ pragma solidity 0.7.4;
 import {
     _wCalcCollateralToWithdraw,
     _wCalcDebtToRepay
-} from "../functions/gelato/FGelatoDebtBridge.sol";
+} from "../../functions/gelato/FGelatoDebtBridge.sol";
 
 contract FGelatoDebtBridgeMock {
     function wCalcCollateralToWithdraw(
