@@ -15,7 +15,8 @@ import {
 } from "../../../functions/dapps/FMaker.sol";
 import {
     _getFlashLoanRoute,
-    _getGasCost
+    _getGasCostMakerToMaker,
+    _getRealisedDebt
 } from "../../../functions/gelato/FGelatoDebtBridge.sol";
 import {_getGelatoProviderFees} from "../../../functions/gelato/FGelato.sol";
 import {DAI} from "../../../constants/CInstaDapp.sol";
@@ -73,10 +74,16 @@ contract ConditionDebtBridgeIsAffordable is GelatoConditionsStandard {
             _vaultId
         );
         uint256 gasFeesPaidFromCol = _getGelatoProviderFees(
-            _getGasCost(_getFlashLoanRoute(DAI, _getMakerVaultDebt(_vaultId)))
+            _getGasCostMakerToMaker(
+                true,
+                _getFlashLoanRoute(
+                    DAI,
+                    _getRealisedDebt(_getMakerVaultDebt(_vaultId))
+                )
+            )
         );
         if (wdiv(gasFeesPaidFromCol, wColToWithdrawFromMaker) >= _ratioLimit)
-            return "DebtRefinanceTooExpensive";
+            return "DebtBridgeNotAffordable";
         return OK;
     }
 }

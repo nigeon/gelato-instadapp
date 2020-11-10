@@ -6,7 +6,7 @@ import {
 } from "../../../interfaces/InstaDapp/connectors/IConnectInstaPoolV2.sol";
 
 function _encodeFlashPayback(
-    address _token,
+    address _colToken,
     uint256 _amt,
     uint256 _getId,
     uint256 _setId
@@ -14,7 +14,7 @@ function _encodeFlashPayback(
     return
         abi.encodeWithSelector(
             IConnectInstaPoolV2.flashPayback.selector,
-            _token,
+            _colToken,
             _amt,
             _getId,
             _setId

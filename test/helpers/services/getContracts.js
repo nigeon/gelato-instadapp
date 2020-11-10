@@ -103,8 +103,8 @@ async function getContracts() {
     "ConnectGelatoProviderPayment"
   );
   const makerResolver = await ethers.getContract("MakerResolver");
-  const connectGelatoDataForFullRefinance = await ethers.getContract(
-    "ConnectGelatoDataForFullRefinance"
+  const connectGelatoDataFullRefinanceMaker = await ethers.getContract(
+    "ConnectGelatoDataFullRefinanceMaker"
   );
 
   return {
@@ -112,7 +112,7 @@ async function getContracts() {
     connectMaker,
     connectInstaPool,
     connectCompound,
-    connectGelatoDataForFullRefinance,
+    connectGelatoDataFullRefinanceMaker,
     instaIndex,
     instaList,
     instaMapping,

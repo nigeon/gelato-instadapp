@@ -20,11 +20,12 @@ async function providerWhiteListTaskForMakerETHAToMakerETHB(
   const spells = [];
 
   const debtBridgeCalculationForFullRefinance = new GelatoCoreLib.Action({
-    addr: contracts.connectGelatoDataForFullRefinance.address,
+    addr: contracts.connectGelatoDataFullRefinanceMaker.address,
     data: await hre.run("abi-encode-withselector", {
-      abi: (await deployments.getArtifact("ConnectGelatoDataForFullRefinance"))
-        .abi,
-      functionname: "getDataAndCastForFromMakerToMaker",
+      abi: (
+        await deployments.getArtifact("ConnectGelatoDataFullRefinanceMaker")
+      ).abi,
+      functionname: "getDataAndCastMakerToMaker",
       inputs: [vaultId, 0, constants.ETH, "ETH-B"],
     }),
     operation: GelatoCoreLib.Operation.Delegatecall,

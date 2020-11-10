@@ -8,7 +8,7 @@ const InstaConnector = require("../../pre-compiles/InstaConnectors.json");
 module.exports = async (hre) => {
   if (hre.network.name === "mainnet") {
     console.log(
-      "Deploying ConnectGelatoDataForFullRefinance to mainnet. Hit ctrl + c to abort"
+      "Deploying ConnectGelatoDataFullRefinanceMaker to mainnet. Hit ctrl + c to abort"
     );
     await sleep(10000);
   }
@@ -24,9 +24,9 @@ module.exports = async (hre) => {
   const connectorLength = await instaConnectors.connectorLength();
   const connectorId = connectorLength.add(1);
 
-  // the following will only deploy "ConnectGelatoDataForFullRefinance"
+  // the following will only deploy "ConnectGelatoDataFullRefinanceMaker"
   // if the contract was never deployed or if the code changed since last deployment
-  await deploy("ConnectGelatoDataForFullRefinance", {
+  await deploy("ConnectGelatoDataFullRefinanceMaker", {
     from: deployer,
     args: [
       connectorId,
@@ -55,7 +55,8 @@ module.exports = async (hre) => {
     await instaConnectors
       .connect(instaMaster)
       .enable(
-        (await ethers.getContract("ConnectGelatoDataForFullRefinance")).address
+        (await ethers.getContract("ConnectGelatoDataFullRefinanceMaker"))
+          .address
       );
 
     await hre.network.provider.request({
@@ -66,4 +67,4 @@ module.exports = async (hre) => {
 };
 
 module.exports.dependencies = ["ConnectGelatoProviderPayment"];
-module.exports.tags = ["ConnectGelatoDataForFullRefinance"];
+module.exports.tags = ["ConnectGelatoDataFullRefinanceMaker"];

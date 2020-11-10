@@ -29,7 +29,7 @@ import {
     _encodedWithdrawMakerVault,
     _encodeOpenMakerVault,
     _encodedDepositMakerVault,
-    _encodeBorrowDaiMakerVault
+    _encodeBorrowMakerVault
 } from "../../functions/InstaDapp/connectors/FConnectMaker.sol";
 import {
     _encodePayGelatoProvider
@@ -44,7 +44,7 @@ import {
     _wCalcDebtToRepay
 } from "../../functions/gelato/FGelatoDebtBridge.sol";
 
-contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
+contract ConnectGelatoDataPartialRefinanceMaker is ConnectorInterface {
     using GelatoBytes for bytes;
 
     // vaultId: Id of the unsafe vault of the client.
@@ -57,15 +57,18 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
     //  method e.g. the function selector of MakerOracle's read function.
     struct PartialDebtBridgePayload {
         uint256 vaultId;
-        address token;
+        address colToken;
+        string colType;
         uint256 wMinColRatioMaker;
         uint256 wMinColRatioB;
         address priceOracle;
         bytes oraclePayload;
     }
 
-    // solhint-disable-next-line const-name-snakecase
-    string public constant override name = "ConnectGelatoData-v1.0";
+    // solhint-disable const-name-snakecase
+    string
+        public constant
+        override name = "ConnectGelatoDataPartialRefinanceMaker-v1.0";
     uint256 internal immutable _id;
     address internal immutable _connectGelatoProviderPayment;
 
@@ -89,15 +92,12 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
     /// @notice Entry Point for DSA.cast DebtBridge from e.g ETH-A to ETH-B
     /// @dev payable to be compatible in conjunction with DSA.cast payable target
     /// @param _payload See PartialDebtBridgePayload struct
-    /// @param _colType colType of the new vault. example : ETH-B, ETH-A.
-    function getDataAndCastForFromMakerToMaker(
-        PartialDebtBridgePayload calldata _payload,
-        string calldata _colType
+    function getDataAndCastMakerToMaker(
+        PartialDebtBridgePayload calldata _payload
     ) external payable {
-        (
-            address[] memory targets,
-            bytes[] memory datas
-        ) = _execPayloadForPartialRefinanceFromMakerToMaker(_payload, _colType);
+        (address[] memory targets, bytes[] memory datas) = _dataMakerToMaker(
+            _payload
+        );
 
         _cast(targets, datas);
     }
@@ -105,13 +105,12 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
     /// @notice Entry Point for DSA.cast DebtBridge from Maker to Compound
     /// @dev payable to be compatible in conjunction with DSA.cast payable target
     /// @param _payload See PartialDebtBridgePayload struct
-    function getDataAndCastForFromMakerToCompound(
+    function getDataAndCastMakerToCompound(
         PartialDebtBridgePayload calldata _payload
     ) external payable {
-        (
-            address[] memory targets,
-            bytes[] memory datas
-        ) = _execPayloadForPartialRefinanceFromMakerToCompound(_payload);
+        (address[] memory targets, bytes[] memory datas) = _dataMakerToCompound(
+            _payload
+        );
 
         _cast(targets, datas);
     }
@@ -130,16 +129,17 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
         );
         if (!success)
             returndata.revertWithError(
-                "ConnectGelatoDataForPartialRefinance._cast:"
+                "ConnectGelatoDataPartialRefinanceMaker._cast:"
             );
     }
 
     /* solhint-disable function-max-lines */
 
-    function _execPayloadForPartialRefinanceFromMakerToMaker(
-        PartialDebtBridgePayload calldata _payload,
-        string calldata _colType
-    ) internal view returns (address[] memory targets, bytes[] memory datas) {
+    function _dataMakerToMaker(PartialDebtBridgePayload calldata _payload)
+        internal
+        view
+        returns (address[] memory targets, bytes[] memory datas)
+    {
         targets = new address[](1);
         targets[0] = INSTA_POOL_V2;
 
@@ -177,16 +177,16 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
             0,
             0
         );
-        _datas[2] = _encodeOpenMakerVault(_colType);
+        _datas[2] = _encodeOpenMakerVault(_payload.colType);
         _datas[3] = _encodedDepositMakerVault(
             0,
             sub(wColToWithdrawFromMaker, gasFeesPaidFromCol),
             0,
             0
         );
-        _datas[4] = _encodeBorrowDaiMakerVault(0, wDaiDebtToMove, 0, 0);
+        _datas[4] = _encodeBorrowMakerVault(0, wDaiDebtToMove, 0, 0);
         _datas[5] = _encodePayGelatoProvider(
-            _payload.token,
+            _payload.colToken,
             gasFeesPaidFromCol,
             0,
             0
@@ -203,9 +203,11 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
         );
     }
 
-    function _execPayloadForPartialRefinanceFromMakerToCompound(
-        PartialDebtBridgePayload calldata _payload
-    ) internal view returns (address[] memory targets, bytes[] memory datas) {
+    function _dataMakerToCompound(PartialDebtBridgePayload calldata _payload)
+        internal
+        view
+        returns (address[] memory targets, bytes[] memory datas)
+    {
         targets = new address[](1);
         targets[0] = INSTA_POOL_V2;
 
@@ -243,14 +245,14 @@ contract ConnectGelatoDataForPartialRefinance is ConnectorInterface {
             0
         );
         _datas[2] = _encodeDepositCompound(
-            _payload.token,
+            _payload.colToken,
             sub(wColToWithdrawFromMaker, gasFeesPaidFromCol),
             0,
             0
         );
         _datas[3] = _encodeBorrowCompound(DAI, wDaiDebtToMove, 0, 0);
         _datas[4] = _encodePayGelatoProvider(
-            _payload.token,
+            _payload.colToken,
             gasFeesPaidFromCol,
             0,
             0

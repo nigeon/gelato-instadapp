@@ -12,7 +12,7 @@ function _encodeOpenMakerVault(string memory _colType)
     return abi.encodeWithSelector(IConnectMaker.open.selector, _colType);
 }
 
-function _encodeBorrowDaiMakerVault(
+function _encodeBorrowMakerVault(
     uint256 _vaultId,
     uint256 _amt,
     uint256 _getId,

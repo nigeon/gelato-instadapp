@@ -6,7 +6,7 @@ import {
 } from "../../../interfaces/InstaDapp/connectors/IConnectCompound.sol";
 
 function _encodeDepositCompound(
-    address _token,
+    address _colToken,
     uint256 _amt,
     uint256 _getId,
     uint256 _setId
@@ -14,7 +14,7 @@ function _encodeDepositCompound(
     return
         abi.encodeWithSelector(
             IConnectCompound.deposit.selector,
-            _token,
+            _colToken,
             _amt,
             _getId,
             _setId
@@ -22,7 +22,7 @@ function _encodeDepositCompound(
 }
 
 function _encodeBorrowCompound(
-    address _token,
+    address _colToken,
     uint256 _amt,
     uint256 _getId,
     uint256 _setId
@@ -30,7 +30,7 @@ function _encodeBorrowCompound(
     return
         abi.encodeWithSelector(
             IConnectCompound.borrow.selector,
-            _token,
+            _colToken,
             _amt,
             _getId,
             _setId

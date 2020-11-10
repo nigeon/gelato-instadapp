@@ -133,7 +133,7 @@ describe("ConditionDebtBridgeIsAffordable Unit Test", function () {
     );
   });
 
-  it("#1: ok should return DebtRefinanceTooExpensive when the gas fees exceed a define amount", async function () {
+  it("#1: ok should return DebtBridgeNotAffordable when the gas fees exceed a define amount", async function () {
     const conditionData = await conditionDebtBridgeIsAffordable.getConditionData(
       cdpId,
       ethers.utils.parseUnits("5", 15)
@@ -141,7 +141,7 @@ describe("ConditionDebtBridgeIsAffordable Unit Test", function () {
 
     expect(
       await conditionDebtBridgeIsAffordable.ok(0, conditionData, 0)
-    ).to.be.equal("DebtRefinanceTooExpensive");
+    ).to.be.equal("DebtBridgeNotAffordable");
   });
 
   it("#2: ok should return OK when the gas fees not exceed a define amount", async function () {

@@ -7,7 +7,7 @@ interface IConnectGelatoProviderPayment is ConnectorInterface {
     function setProvider(address _provider) external;
 
     function payProvider(
-        address _token,
+        address _colToken,
         uint256 _amt,
         uint256 _getId,
         uint256 _setId

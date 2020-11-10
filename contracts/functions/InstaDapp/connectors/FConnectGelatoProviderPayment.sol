@@ -6,7 +6,7 @@ import {
 } from "../../../interfaces/InstaDapp/connectors/IConnectGelatoProviderPayment.sol";
 
 function _encodePayGelatoProvider(
-    address _token,
+    address _colToken,
     uint256 _amt,
     uint256 _getId,
     uint256 _setId
@@ -14,7 +14,7 @@ function _encodePayGelatoProvider(
     return
         abi.encodeWithSelector(
             IConnectGelatoProviderPayment.payProvider.selector,
-            _token,
+            _colToken,
             _amt,
             _getId,
             _setId
