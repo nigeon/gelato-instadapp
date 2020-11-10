@@ -173,7 +173,7 @@
         },
         {
           "internalType": "uint256",
-          "name": "max_colTokens",
+          "name": "max_tokens",
           "type": "uint256"
         },
         {
@@ -275,7 +275,7 @@
         },
         {
           "internalType": "uint256",
-          "name": "min_colTokens_bought",
+          "name": "min_tokens_bought",
           "type": "uint256"
         },
         {

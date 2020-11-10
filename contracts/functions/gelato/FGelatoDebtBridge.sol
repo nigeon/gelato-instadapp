@@ -57,14 +57,14 @@ function _wCalcDebtToRepay(
         );
 }
 
-function _getFlashLoanRoute(address _colTokenA, uint256 _wTokenADebtToMove)
+function _getFlashLoanRoute(address _tokenA, uint256 _wTokenADebtToMove)
     view
     returns (uint256)
 {
     IInstaPoolResolver.RouteData memory rData = IInstaPoolResolver(
         INSTA_POOL_RESOLVER
     )
-        .getTokenLimit(_colTokenA);
+        .getTokenLimit(_tokenA);
 
     if (rData.dydx > _wTokenADebtToMove) return 0;
     if (rData.maker > _wTokenADebtToMove) return 1;
