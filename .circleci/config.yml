@@ -20,20 +20,23 @@ jobs: # a collection of steps
             - ./node_modules
       - run: # Compile
           name: Compile
-          command: npx hardhat compile
+          command: yarn compile
       - run: # Formatting
           name: Prettier Check
           command: yarn prettier --check .
       - run: # Linting
           name: ESLint
-          command: yarn eslint . && yarn lint:sol
+          command: yarn lint
       - restore_cache: # special step to restore the Hardhat Network Fork Cache
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           name: Restore Hardhat Network Fork Cache
           key: hardhat-network-fork
       - run: # Tests
-          name: Tests using hardhat mainnet fork
-          command: npx hardhat test
+          name: Tests using hardhat mainnet fork and gas reporter
+          command: REPORT_GAS=1 yarn test
+      - run: # Codechecks
+          name: Codechecks gas reporting
+          command: npx codechecks
       - save_cache: # special step to save the Hardhat Network Fork cache
           name: Save Hardhat Network Fork Cache
           key: hardhat-network-fork

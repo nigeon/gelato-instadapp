@@ -4,6 +4,7 @@ require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-deploy");
 require("hardhat-deploy-ethers");
+require("hardhat-gas-reporter");
 
 // Libraries
 const assert = require("assert");
@@ -26,6 +27,11 @@ const INSTA_MASTER = "0xb1DC62EC38E6E3857a887210C38418E4A17Da5B2";
 // ================================= CONFIG =========================================
 module.exports = {
   defaultNetwork: "hardhat",
+  gasReporter: {
+    enabled: process.env.REPORT_GAS ? true : false,
+    maxMethodDiff: 25,
+    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
+  },
   // hardhat-deploy
   namedAccounts: {
     deployer: {
