@@ -3,7 +3,9 @@ const hre = require("hardhat");
 const {deployments, ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
-const setupFullRefinanceMakerToMaker = require("./helpers/setupFullRefinanceMakerToMaker");
+const setupFullRefinanceMakerToMakerWithVaultBCreation = require("./helpers/setupFullRefinanceMakerToMakerWithVaultBCreation");
+const getRoute = require("./helpers/services/getRoute");
+const getGasCostForFullRefinance = require("./helpers/services/getGasCostForFullRefinance");
 
 // This test showcases how to submit a task refinancing a Users debt position from
 // Maker to Compound using Gelato
@@ -32,7 +34,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     // Reset back to a fresh forked state during runtime
     await deployments.fixture();
 
-    const result = await setupFullRefinanceMakerToMaker();
+    const result = await setupFullRefinanceMakerToMakerWithVaultBCreation();
 
     wallets = result.wallets;
     contracts = result.contracts;
@@ -92,9 +94,20 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
       ),
     });
 
+    const conditionDebtBridgeIsAffordableObj = new GelatoCoreLib.Condition({
+      inst: contracts.conditionDebtBridgeIsAffordable.address,
+      data: await contracts.conditionDebtBridgeIsAffordable.getConditionData(
+        vaultAId,
+        constants.MAX_FEES_IN_PERCENT
+      ),
+    });
+
     // ======= GELATO TASK SETUP ======
     const refinanceFromEthAToBIfVaultUnsafe = new GelatoCoreLib.Task({
-      conditions: [conditionMakerVaultUnsafeObj],
+      conditions: [
+        conditionMakerVaultUnsafeObj,
+        conditionDebtBridgeIsAffordableObj,
+      ],
       actions: gelatoDebtBridgeSpells,
     });
 
@@ -188,7 +201,15 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
       vaultAId
     );
 
-    const gasFeesPaidFromCol = ethers.BigNumber.from(1850000).mul(
+    const route = await getRoute(
+      contracts.DAI.address,
+      debtOnMakerBefore,
+      contracts.instaPoolResolver
+    );
+
+    const gasCost = await getGasCostForFullRefinance(route);
+
+    const gasFeesPaidFromCol = ethers.BigNumber.from(gasCost).mul(
       gelatoGasPrice
     );
 
@@ -250,20 +271,26 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     );
 
     // Estimated amount to borrowed token should be equal to the actual one read on compound contracts
-    expect(debtOnMakerBefore).to.be.equal(debtOnMakerVaultB);
+    if (route === 1) {
+      expect(debtOnMakerBefore).to.be.lte(debtOnMakerVaultB);
+    } else {
+      expect(debtOnMakerBefore).to.be.equal(debtOnMakerVaultB);
+
+      // We should not have borrowed DAI on maker
+      const debtOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultDebt(
+        vaultAId
+      );
+      expect(debtOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
+    }
 
     // Estimated amount of collateral should be equal to the actual one read on compound contracts
     expect(pricedCollateral).to.be.equal(pricedCollateralOnVaultB);
 
-    const debtOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultDebt(
-      vaultAId
-    );
     const collateralOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultCollateralBalance(
       vaultAId
     ); // in Ether.
 
-    // We should not have borrowed DAI on maker or deposited ether on it.
-    expect(debtOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
+    // We should not have deposited ether on it.
     expect(collateralOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
 
     // DSA has maximum 2 wei DAI in it due to maths inaccuracies

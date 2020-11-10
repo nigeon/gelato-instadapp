@@ -17,6 +17,7 @@ const IERC20 = require("../../../pre-compiles/IERC20.json");
 const CTokenInterface = require("../../../pre-compiles/CTokenInterface.json");
 const CompoundResolver = require("../../../pre-compiles/InstaCompoundResolver.json");
 const DsaProviderModuleABI = require("../../../pre-compiles/ProviderModuleDsa_ABI.json");
+const InstaPoolResolver = require("../../../artifacts/contracts/interfaces/InstaDapp/resolvers/IInstaPoolResolver.sol/IInstaPoolResolver.json");
 
 async function getContracts() {
   const instaMaster = await ethers.provider.getSigner(
@@ -85,11 +86,18 @@ async function getContracts() {
     DsaProviderModuleABI,
     hre.network.config.ProviderModuleDsa
   );
+  const instaPoolResolver = await ethers.getContractAt(
+    InstaPoolResolver.abi,
+    hre.network.config.InstaPoolResolver
+  );
 
   // ===== Get deployed contracts ==================
   const priceOracleResolver = await ethers.getContract("PriceOracleResolver");
   const conditionMakerVaultUnsafe = await ethers.getContract(
     "ConditionMakerVaultUnsafe"
+  );
+  const conditionDebtBridgeIsAffordable = await ethers.getContract(
+    "ConditionDebtBridgeIsAffordable"
   );
   const connectGelatoProviderPayment = await ethers.getContract(
     "ConnectGelatoProviderPayment"
@@ -122,7 +130,9 @@ async function getContracts() {
     priceOracleResolver,
     dsa: ethers.constants.AddressZero,
     makerResolver,
+    instaPoolResolver,
     dsaProviderModule,
+    conditionDebtBridgeIsAffordable,
   };
 }
 

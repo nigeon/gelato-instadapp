@@ -12,3 +12,6 @@ address constant INSTA_POOL_V2 = 0x3150e5A805577366816A1ddc7330c6Ea17070c05;
 // Tokens
 address constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 address constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+
+// Insta Pool
+address constant INSTA_POOL_RESOLVER = 0xa004a5afBa04b74037E9E52bA1f7eb02b5E61509;

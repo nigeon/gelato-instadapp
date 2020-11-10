@@ -4,11 +4,12 @@ const {deployments, ethers} = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
 // Instadapp UI should do the same implementation for submitting debt bridge task
-async function providerWhiteListTaskForMakerETHAToMakerETHB(
+async function providerWhiteListTaskForMakerETHAToMakerETHBWithVaultB(
   wallets,
   contracts,
   constants,
-  vaultId
+  vaultAId,
+  vaultBId
 ) {
   //#region Step 9 Provider should whitelist task
 
@@ -25,7 +26,7 @@ async function providerWhiteListTaskForMakerETHAToMakerETHB(
       abi: (await deployments.getArtifact("ConnectGelatoDataForFullRefinance"))
         .abi,
       functionname: "getDataAndCastForFromMakerToMaker",
-      inputs: [vaultId, 0, constants.ETH, "ETH-B"],
+      inputs: [vaultAId, vaultBId, constants.ETH, "ETH-B"],
     }),
     operation: GelatoCoreLib.Operation.Delegatecall,
   });
@@ -76,4 +77,4 @@ async function providerWhiteListTaskForMakerETHAToMakerETHB(
   return spells;
 }
 
-module.exports = providerWhiteListTaskForMakerETHAToMakerETHB;
+module.exports = providerWhiteListTaskForMakerETHAToMakerETHBWithVaultB;

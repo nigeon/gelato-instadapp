@@ -36,7 +36,10 @@ async function providerWhiteListTaskForMakerToCompound(
 
   const connectGelatoFullDebtBridgeFromMakerTaskSpec = new GelatoCoreLib.TaskSpec(
     {
-      conditions: [contracts.conditionMakerVaultUnsafe.address],
+      conditions: [
+        contracts.conditionMakerVaultUnsafe.address,
+        contracts.conditionDebtBridgeIsAffordable.address,
+      ],
       actions: spells,
       gasPriceCeil,
     }

@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.7.4;
+pragma experimental ABIEncoderV2;
 
 import {sub, wmul, wdiv} from "../../vendor/DSMath.sol";
+import {INSTA_POOL_RESOLVER} from "../../constants/CInstaDapp.sol";
+import {GAS_COSTS_FOR_FULL_REFINANCE} from "../../constants/CDebtBridge.sol";
+import {
+    IInstaPoolResolver
+} from "../../interfaces/InstaDapp/resolvers/IInstaPoolResolver.sol";
 
 function _wCalcCollateralToWithdraw(
     uint256 _wMinColRatioA,
@@ -46,4 +52,30 @@ function _wCalcDebtToRepay(
                 )
             )
         );
+}
+
+function _getFlashLoanRoute(address _tokenA, uint256 _wTokenADebtToMove)
+    view
+    returns (uint256)
+{
+    IInstaPoolResolver.RouteData memory rData = IInstaPoolResolver(
+        INSTA_POOL_RESOLVER
+    )
+        .getTokenLimit(_tokenA);
+
+    if (rData.dydx > _wTokenADebtToMove) return 0;
+    if (rData.maker > _wTokenADebtToMove) return 1;
+    if (rData.compound > _wTokenADebtToMove) return 2;
+    if (rData.aave > _wTokenADebtToMove) return 3;
+    revert(
+        "GelateDebtBridge._getRoute: All route have insufficient liquidties."
+    );
+}
+
+function _getGasCost(uint256 _route) pure returns (uint256) {
+    return GAS_COSTS_FOR_FULL_REFINANCE()[_route];
+}
+
+function _getBorrowAmountWithDelta(uint256 _DebtToMove) pure returns (uint256) {
+    return wmul(_DebtToMove, 1005e15);
 }
