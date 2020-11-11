@@ -4,7 +4,7 @@ pragma solidity 0.7.4;
 import {
     GelatoConditionsStandard
 } from "@gelatonetwork/core/contracts/conditions/GelatoConditionsStandard.sol";
-import {SafeMath} from "@gelatonetwork/core/contracts/external/SafeMath.sol";
+import {SafeMath} from "../../../vendor/SafeMath.sol";
 import {
     IGelatoCore
 } from "@gelatonetwork/core/contracts/gelato_core/interfaces/IGelatoCore.sol";

@@ -91,10 +91,40 @@ module.exports = {
     },
   },
   solidity: {
-    version: "0.7.4",
-    settings: {
-      optimizer: {enabled: process.env.DEBUG ? false : true},
-    },
+    compilers: [
+      {
+        version: "0.6.10",
+        settings: {
+          optimizer: {enabled: process.env.DEBUG ? false : true},
+        },
+      },
+      {
+        version: "0.7.4",
+        settings: {
+          optimizer: {enabled: process.env.DEBUG ? false : true},
+        },
+      },
+    ],
+    // overrides: {
+    //   "contracts/vendor/DependenciesSix.sol": {
+    //     version: "0.6.10",
+    //     settings: {
+    //       optimizer: {enabled: process.env.DEBUG ? false : true},
+    //     },
+    //   },
+    //   "@gelatonetwork/core/contracts/gelato_core/GelatoCore.sol": {
+    //     version: "0.6.10",
+    //     settings: {
+    //       optimizer: {enabled: process.env.DEBUG ? false : true},
+    //     },
+    //   },
+    //   "@gelatonetwork/core/contracts/external/Ownable.sol": {
+    //     version: "0.6.10",
+    //     settings: {
+    //       optimizer: {enabled: process.env.DEBUG ? false : true},
+    //     },
+    //   },
+    // },
   },
 };
 
