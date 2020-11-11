@@ -21,6 +21,20 @@ function _getMakerVaultDebt(uint256 _vaultId) view returns (uint256 wad) {
     wad = mul(wad, RAY) < rad ? wad + 1 : wad;
 }
 
+function _getMakerRawVaultDebt(uint256 _vaultId) view returns (uint256 tab) {
+    IMcdManager manager = IMcdManager(MCD_MANAGER);
+
+    (bytes32 ilk, address urn) = _getVaultData(manager, _vaultId);
+    IVat vat = IVat(manager.vat());
+    (, uint256 rate, , , ) = vat.ilks(ilk);
+    (, uint256 art) = vat.urns(ilk, urn);
+
+    uint256 rad = mul(art, rate);
+
+    tab = rad / RAY;
+    tab = mul(tab, RAY) < rad ? tab + 1 : tab;
+}
+
 function _getMakerVaultCollateralBalance(uint256 _vaultId)
     view
     returns (uint256)

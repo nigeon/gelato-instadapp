@@ -274,15 +274,9 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
         compoundPosition[0].borrowBalanceStoredUser
       );
     } else {
-      expect(debtOnMakerBefore).to.be.equal(
-        compoundPosition[0].borrowBalanceStoredUser
-      );
-
-      // We should not have borrowed DAI on maker
-      const debtOnMakerAfter = await contracts.makerResolver.getMakerVaultDebt(
-        vaultId
-      );
-      expect(debtOnMakerAfter).to.be.equal(ethers.constants.Zero);
+      expect(
+        debtOnMakerBefore.sub(compoundPosition[0].borrowBalanceStoredUser)
+      ).to.be.lt(ethers.utils.parseUnits("2", 0));
     }
 
     // Estimated amount of collateral should be equal to the actual one read on compound contracts
@@ -292,12 +286,16 @@ describe("Full Debt Bridge refinancing loan from Maker to Compound", function ()
       )
     ).to.be.lt(ethers.utils.parseUnits("1", 12));
 
-    const collateralOnMakerAfter = await contracts.makerResolver.getMakerVaultCollateralBalance(
+    const collateralOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultCollateralBalance(
       vaultId
     ); // in Ether.
+    const debtOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultDebt(
+      vaultId
+    );
 
-    // We should not have deposited ether on it.
-    expect(collateralOnMakerAfter).to.be.equal(ethers.constants.Zero);
+    // We should not have deposited ether or borrowed DAI on maker.
+    expect(collateralOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
+    expect(debtOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
 
     // DSA contain 1000 DAI
     expect(await contracts.DAI.balanceOf(contracts.dsa.address)).to.be.equal(

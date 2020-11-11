@@ -2,14 +2,14 @@
 pragma solidity 0.7.4;
 
 import {
-    _getMakerVaultDebt,
+    _getMakerRawVaultDebt,
     _getMakerVaultCollateralBalance
 } from "../../functions/dapps/FMaker.sol";
 
 contract MakerResolver {
     /// @dev Return Debt in wad of the vault associated to the vaultId.
     function getMakerVaultDebt(uint256 _vaultId) public view returns (uint256) {
-        return _getMakerVaultDebt(_vaultId);
+        return _getMakerRawVaultDebt(_vaultId);
     }
 
     /// @dev Return Collateral in wad of the vault associated to the vaultId.

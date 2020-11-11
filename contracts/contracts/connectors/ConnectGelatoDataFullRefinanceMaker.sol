@@ -3,7 +3,7 @@ pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
 
 import {GelatoBytes} from "../../lib/GelatoBytes.sol";
-import {sub, wmul} from "../../vendor/DSMath.sol";
+import {sub} from "../../vendor/DSMath.sol";
 import {
     AccountInterface,
     ConnectorInterface

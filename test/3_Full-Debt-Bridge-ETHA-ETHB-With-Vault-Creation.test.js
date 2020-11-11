@@ -275,12 +275,6 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B with vault creat
       expect(debtOnMakerBefore).to.be.lte(debtOnMakerVaultB);
     } else {
       expect(debtOnMakerBefore).to.be.equal(debtOnMakerVaultB);
-
-      // We should not have borrowed DAI on maker
-      const debtOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultDebt(
-        vaultAId
-      );
-      expect(debtOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
     }
 
     // Estimated amount of collateral should be equal to the actual one read on compound contracts
@@ -289,9 +283,13 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B with vault creat
     const collateralOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultCollateralBalance(
       vaultAId
     ); // in Ether.
+    const debtOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultDebt(
+      vaultAId
+    );
 
-    // We should not have deposited ether on it.
+    // We should not have deposited ether or borrowed DAI on maker.
     expect(collateralOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
+    expect(debtOnMakerOnVaultAAfter).to.be.equal(ethers.constants.Zero);
 
     // DSA has maximum 2 wei DAI in it due to maths inaccuracies
     expect(await contracts.DAI.balanceOf(contracts.dsa.address)).to.be.equal(

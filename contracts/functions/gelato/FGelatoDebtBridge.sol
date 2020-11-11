@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import {add, sub, wmul, wdiv} from "../../vendor/DSMath.sol";
 import {
     INSTA_POOL_RESOLVER,
-    ROUTE_1_3_TOLERANCE
+    ROUTE_1_TOLERANCE
 } from "../../constants/CInstaDapp.sol";
 import {GAS_COSTS_FOR_FULL_REFINANCE} from "../../constants/CDebtBridge.sol";
 import {
@@ -77,6 +77,7 @@ function _getGasCostMakerToMaker(bool _newVault, uint256 _route)
     pure
     returns (uint256)
 {
+    _checkRouteIndex(_route);
     return
         _newVault
             ? add(GAS_COSTS_FOR_FULL_REFINANCE()[_route], 0)
@@ -84,9 +85,17 @@ function _getGasCostMakerToMaker(bool _newVault, uint256 _route)
 }
 
 function _getGasCostMakerToCompound(uint256 _route) pure returns (uint256) {
+    _checkRouteIndex(_route);
     return GAS_COSTS_FOR_FULL_REFINANCE()[_route];
 }
 
 function _getRealisedDebt(uint256 _debtToMove) pure returns (uint256) {
-    return wmul(_debtToMove, ROUTE_1_3_TOLERANCE);
+    return wmul(_debtToMove, ROUTE_1_TOLERANCE);
+}
+
+function _checkRouteIndex(uint256 _route) pure {
+    require(
+        _route <= 4,
+        "FGelatoDebtBridge._getGasCostMakerToMaker: invalid route index"
+    );
 }
