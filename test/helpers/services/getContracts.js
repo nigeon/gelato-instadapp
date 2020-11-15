@@ -19,7 +19,7 @@ const CompoundResolver = require("../../../pre-compiles/InstaCompoundResolver.js
 const DsaProviderModuleABI = require("../../../pre-compiles/ProviderModuleDsa_ABI.json");
 const InstaPoolResolver = require("../../../artifacts/contracts/interfaces/InstaDapp/resolvers/IInstaPoolResolver.sol/IInstaPoolResolver.json");
 
-async function getContracts() {
+module.exports = async function () {
   const instaMaster = await ethers.provider.getSigner(
     hre.network.config.InstaMaster
   );
@@ -134,6 +134,4 @@ async function getContracts() {
     dsaProviderModule,
     conditionDebtBridgeIsAffordable,
   };
-}
-
-module.exports = getContracts;
+};

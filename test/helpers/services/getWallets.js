@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const hre = require("hardhat");
 const { ethers } = hre;
 
-async function getWallets() {
+module.exports = async function () {
   let userWallet;
   let userAddress;
   let gelatoProviderWallet;
@@ -30,6 +30,4 @@ async function getWallets() {
     gelatoExecutorWallet: gelatoExecutorWallet,
     gelatoExecutorAddress: gelatoExecutorAddress,
   };
-}
-
-module.exports = getWallets;
+};

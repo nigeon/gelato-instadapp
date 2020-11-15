@@ -2,4 +2,5 @@ node_modules/
 contracts/constants
 contracts/dependencies
 contracts/functions
+contracts/__mocks__/__dependencies__
 contracts/vendor
