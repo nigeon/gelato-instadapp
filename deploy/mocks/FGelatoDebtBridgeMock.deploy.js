@@ -5,7 +5,7 @@ module.exports = async (hre) => {
     console.log(
       "Deploying FGelatoDebtBridgeMock to mainnet. Hit ctrl + c to abort"
     );
-    await sleep(2000);
+    await sleep(6000);
   }
 
   const { deployments } = hre;

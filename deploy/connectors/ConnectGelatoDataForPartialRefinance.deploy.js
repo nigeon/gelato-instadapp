@@ -10,7 +10,8 @@ module.exports = async (hre) => {
     console.log(
       "Deploying ConnectGelatoDataPartialRefinanceMaker to mainnet. Hit ctrl + c to abort"
     );
-    await sleep(2000);
+    console.log("❗ CONNECTOR DEPLOYMENT: VERIFY & HARDCODE CONNECTOR ID");
+    await sleep(6000);
   }
 
   const { deployments } = hre;
