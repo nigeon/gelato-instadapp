@@ -1,7 +1,7 @@
 {
   "contractName": "ConnectAuth",
   "abi": [
-    {"inputs": [], "stateMutability": "nonpayable", "type": "constructor"},
+    { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
     {
       "anonymous": false,
       "inputs": [
@@ -30,7 +30,7 @@
     },
     {
       "inputs": [
-        {"internalType": "address[]", "name": "cTkn", "type": "address[]"}
+        { "internalType": "address[]", "name": "cTkn", "type": "address[]" }
       ],
       "name": "addCtknMapping",
       "outputs": [],
@@ -39,7 +39,7 @@
     },
     {
       "inputs": [
-        {"internalType": "address[]", "name": "gemJoins", "type": "address[]"}
+        { "internalType": "address[]", "name": "gemJoins", "type": "address[]" }
       ],
       "name": "addGemJoinMapping",
       "outputs": [],
@@ -47,44 +47,44 @@
       "type": "function"
     },
     {
-      "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+      "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
       "name": "cTokenMapping",
-      "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+      "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
       "stateMutability": "view",
       "type": "function"
     },
     {
       "inputs": [],
       "name": "connectors",
-      "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+      "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
       "stateMutability": "view",
       "type": "function"
     },
     {
-      "inputs": [{"internalType": "bytes32", "name": "", "type": "bytes32"}],
+      "inputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
       "name": "gemJoinMapping",
-      "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+      "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
       "stateMutability": "view",
       "type": "function"
     },
     {
       "inputs": [],
       "name": "instaIndex",
-      "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+      "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
       "stateMutability": "view",
       "type": "function"
     },
     {
       "inputs": [],
       "name": "name",
-      "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+      "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
       "stateMutability": "view",
       "type": "function"
     },
     {
       "inputs": [],
       "name": "version",
-      "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
       "stateMutability": "view",
       "type": "function"
     }

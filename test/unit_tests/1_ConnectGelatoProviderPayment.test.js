@@ -1,6 +1,6 @@
-const {expect} = require("chai");
+const { expect } = require("chai");
 const hre = require("hardhat");
-const {ethers, deployments} = hre;
+const { ethers, deployments } = hre;
 
 const GelatoCoreLib = require("@gelatonetwork/core");
 

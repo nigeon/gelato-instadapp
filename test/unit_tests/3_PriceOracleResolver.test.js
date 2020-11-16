@@ -1,6 +1,6 @@
-const {expect} = require("chai");
+const { expect } = require("chai");
 const hre = require("hardhat");
-const {deployments, ethers} = hre;
+const { deployments, ethers } = hre;
 
 const ORACLE_MAKER_ETH_USD = "ETH/USD-Maker-v1";
 const ORACLE_MAKER_ETH_USD_ADDR = "0x729D19f657BD0614b4985Cf1D82531c67569197B";

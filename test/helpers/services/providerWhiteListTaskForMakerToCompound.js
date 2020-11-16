@@ -1,6 +1,6 @@
-const {expect} = require("chai");
+const { expect } = require("chai");
 const hre = require("hardhat");
-const {ethers, deployments} = hre;
+const { ethers, deployments } = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
 // Instadapp UI should do the same implementation for submitting debt bridge task

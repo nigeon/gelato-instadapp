@@ -4,18 +4,18 @@
     "inputs": [
       {
         "components": [
-          {"internalType": "uint256", "name": "id", "type": "uint256"},
-          {"internalType": "address", "name": "userProxy", "type": "address"},
+          { "internalType": "uint256", "name": "id", "type": "uint256" },
+          { "internalType": "address", "name": "userProxy", "type": "address" },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "address", "name": "module", "type": "address"}
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "address", "name": "module", "type": "address" }
             ],
             "internalType": "struct Provider",
             "name": "provider",
             "type": "tuple"
           },
-          {"internalType": "uint256", "name": "index", "type": "uint256"},
+          { "internalType": "uint256", "name": "index", "type": "uint256" },
           {
             "components": [
               {
@@ -25,7 +25,7 @@
                     "name": "inst",
                     "type": "address"
                   },
-                  {"internalType": "bytes", "name": "data", "type": "bytes"}
+                  { "internalType": "bytes", "name": "data", "type": "bytes" }
                 ],
                 "internalType": "struct Condition[]",
                 "name": "conditions",
@@ -38,7 +38,7 @@
                     "name": "addr",
                     "type": "address"
                   },
-                  {"internalType": "bytes", "name": "data", "type": "bytes"},
+                  { "internalType": "bytes", "name": "data", "type": "bytes" },
                   {
                     "internalType": "enum Operation",
                     "name": "operation",
@@ -84,7 +84,7 @@
             "name": "expiryDate",
             "type": "uint256"
           },
-          {"internalType": "uint256", "name": "cycleId", "type": "uint256"},
+          { "internalType": "uint256", "name": "cycleId", "type": "uint256" },
           {
             "internalType": "uint256",
             "name": "submissionsLeft",
@@ -130,8 +130,8 @@
           },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"},
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" },
               {
                 "internalType": "enum Operation",
                 "name": "operation",
@@ -142,8 +142,8 @@
                 "name": "dataFlow",
                 "type": "uint8"
               },
-              {"internalType": "uint256", "name": "value", "type": "uint256"},
-              {"internalType": "bool", "name": "termsOkCheck", "type": "bool"}
+              { "internalType": "uint256", "name": "value", "type": "uint256" },
+              { "internalType": "bool", "name": "termsOkCheck", "type": "bool" }
             ],
             "internalType": "struct Action[]",
             "name": "actions",
@@ -200,8 +200,8 @@
           },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"},
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" },
               {
                 "internalType": "enum Operation",
                 "name": "operation",
@@ -212,8 +212,8 @@
                 "name": "dataFlow",
                 "type": "uint8"
               },
-              {"internalType": "uint256", "name": "value", "type": "uint256"},
-              {"internalType": "bool", "name": "termsOkCheck", "type": "bool"}
+              { "internalType": "uint256", "name": "value", "type": "uint256" },
+              { "internalType": "bool", "name": "termsOkCheck", "type": "bool" }
             ],
             "internalType": "struct Action[]",
             "name": "actions",
@@ -263,8 +263,8 @@
     "inputs": [
       {
         "components": [
-          {"internalType": "address", "name": "addr", "type": "address"},
-          {"internalType": "address", "name": "module", "type": "address"}
+          { "internalType": "address", "name": "addr", "type": "address" },
+          { "internalType": "address", "name": "module", "type": "address" }
         ],
         "indexed": true,
         "internalType": "struct Provider",
@@ -275,8 +275,8 @@
         "components": [
           {
             "components": [
-              {"internalType": "address", "name": "inst", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"}
+              { "internalType": "address", "name": "inst", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" }
             ],
             "internalType": "struct Condition[]",
             "name": "conditions",
@@ -284,8 +284,8 @@
           },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"},
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" },
               {
                 "internalType": "enum Operation",
                 "name": "operation",
@@ -296,8 +296,8 @@
                 "name": "dataFlow",
                 "type": "uint8"
               },
-              {"internalType": "uint256", "name": "value", "type": "uint256"},
-              {"internalType": "bool", "name": "termsOkCheck", "type": "bool"}
+              { "internalType": "uint256", "name": "value", "type": "uint256" },
+              { "internalType": "bool", "name": "termsOkCheck", "type": "bool" }
             ],
             "internalType": "struct Action[]",
             "name": "actions",
@@ -346,8 +346,8 @@
     "inputs": [
       {
         "components": [
-          {"internalType": "address", "name": "addr", "type": "address"},
-          {"internalType": "address", "name": "module", "type": "address"}
+          { "internalType": "address", "name": "addr", "type": "address" },
+          { "internalType": "address", "name": "module", "type": "address" }
         ],
         "indexed": true,
         "internalType": "struct Provider",
@@ -358,8 +358,8 @@
         "components": [
           {
             "components": [
-              {"internalType": "address", "name": "inst", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"}
+              { "internalType": "address", "name": "inst", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" }
             ],
             "internalType": "struct Condition[]",
             "name": "conditions",
@@ -367,8 +367,8 @@
           },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"},
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" },
               {
                 "internalType": "enum Operation",
                 "name": "operation",
@@ -379,8 +379,8 @@
                 "name": "dataFlow",
                 "type": "uint8"
               },
-              {"internalType": "uint256", "name": "value", "type": "uint256"},
-              {"internalType": "bool", "name": "termsOkCheck", "type": "bool"}
+              { "internalType": "uint256", "name": "value", "type": "uint256" },
+              { "internalType": "bool", "name": "termsOkCheck", "type": "bool" }
             ],
             "internalType": "struct Action[]",
             "name": "actions",
@@ -429,8 +429,8 @@
     "inputs": [
       {
         "components": [
-          {"internalType": "address", "name": "addr", "type": "address"},
-          {"internalType": "address", "name": "module", "type": "address"}
+          { "internalType": "address", "name": "addr", "type": "address" },
+          { "internalType": "address", "name": "module", "type": "address" }
         ],
         "indexed": true,
         "internalType": "struct Provider",
@@ -441,8 +441,8 @@
         "components": [
           {
             "components": [
-              {"internalType": "address", "name": "inst", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"}
+              { "internalType": "address", "name": "inst", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" }
             ],
             "internalType": "struct Condition[]",
             "name": "conditions",
@@ -450,8 +450,8 @@
           },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"},
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" },
               {
                 "internalType": "enum Operation",
                 "name": "operation",
@@ -462,8 +462,8 @@
                 "name": "dataFlow",
                 "type": "uint8"
               },
-              {"internalType": "uint256", "name": "value", "type": "uint256"},
-              {"internalType": "bool", "name": "termsOkCheck", "type": "bool"}
+              { "internalType": "uint256", "name": "value", "type": "uint256" },
+              { "internalType": "bool", "name": "termsOkCheck", "type": "bool" }
             ],
             "internalType": "struct Action[]",
             "name": "actions",
@@ -511,8 +511,8 @@
     "inputs": [],
     "name": "connectorID",
     "outputs": [
-      {"internalType": "uint256", "name": "_type", "type": "uint256"},
-      {"internalType": "uint256", "name": "_id", "type": "uint256"}
+      { "internalType": "uint256", "name": "_type", "type": "uint256" },
+      { "internalType": "uint256", "name": "_id", "type": "uint256" }
     ],
     "stateMutability": "pure",
     "type": "function"
@@ -521,18 +521,18 @@
     "inputs": [
       {
         "components": [
-          {"internalType": "uint256", "name": "id", "type": "uint256"},
-          {"internalType": "address", "name": "userProxy", "type": "address"},
+          { "internalType": "uint256", "name": "id", "type": "uint256" },
+          { "internalType": "address", "name": "userProxy", "type": "address" },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "address", "name": "module", "type": "address"}
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "address", "name": "module", "type": "address" }
             ],
             "internalType": "struct Provider",
             "name": "provider",
             "type": "tuple"
           },
-          {"internalType": "uint256", "name": "index", "type": "uint256"},
+          { "internalType": "uint256", "name": "index", "type": "uint256" },
           {
             "components": [
               {
@@ -542,7 +542,7 @@
                     "name": "inst",
                     "type": "address"
                   },
-                  {"internalType": "bytes", "name": "data", "type": "bytes"}
+                  { "internalType": "bytes", "name": "data", "type": "bytes" }
                 ],
                 "internalType": "struct Condition[]",
                 "name": "conditions",
@@ -555,7 +555,7 @@
                     "name": "addr",
                     "type": "address"
                   },
-                  {"internalType": "bytes", "name": "data", "type": "bytes"},
+                  { "internalType": "bytes", "name": "data", "type": "bytes" },
                   {
                     "internalType": "enum Operation",
                     "name": "operation",
@@ -601,7 +601,7 @@
             "name": "expiryDate",
             "type": "uint256"
           },
-          {"internalType": "uint256", "name": "cycleId", "type": "uint256"},
+          { "internalType": "uint256", "name": "cycleId", "type": "uint256" },
           {
             "internalType": "uint256",
             "name": "submissionsLeft",
@@ -620,7 +620,7 @@
   },
   {
     "inputs": [
-      {"internalType": "address", "name": "_executor", "type": "address"},
+      { "internalType": "address", "name": "_executor", "type": "address" },
       {
         "components": [
           {
@@ -630,8 +630,8 @@
           },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"},
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" },
               {
                 "internalType": "enum Operation",
                 "name": "operation",
@@ -642,8 +642,8 @@
                 "name": "dataFlow",
                 "type": "uint8"
               },
-              {"internalType": "uint256", "name": "value", "type": "uint256"},
-              {"internalType": "bool", "name": "termsOkCheck", "type": "bool"}
+              { "internalType": "uint256", "name": "value", "type": "uint256" },
+              { "internalType": "bool", "name": "termsOkCheck", "type": "bool" }
             ],
             "internalType": "struct Action[]",
             "name": "actions",
@@ -659,10 +659,10 @@
         "name": "_taskSpecs",
         "type": "tuple[]"
       },
-      {"internalType": "address[]", "name": "_modules", "type": "address[]"},
-      {"internalType": "uint256", "name": "_ethToDeposit", "type": "uint256"},
-      {"internalType": "uint256", "name": "_getId", "type": "uint256"},
-      {"internalType": "uint256", "name": "_setId", "type": "uint256"}
+      { "internalType": "address[]", "name": "_modules", "type": "address[]" },
+      { "internalType": "uint256", "name": "_ethToDeposit", "type": "uint256" },
+      { "internalType": "uint256", "name": "_getId", "type": "uint256" },
+      { "internalType": "uint256", "name": "_setId", "type": "uint256" }
     ],
     "name": "multiProvide",
     "outputs": [],
@@ -685,8 +685,8 @@
           },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"},
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" },
               {
                 "internalType": "enum Operation",
                 "name": "operation",
@@ -697,8 +697,8 @@
                 "name": "dataFlow",
                 "type": "uint8"
               },
-              {"internalType": "uint256", "name": "value", "type": "uint256"},
-              {"internalType": "bool", "name": "termsOkCheck", "type": "bool"}
+              { "internalType": "uint256", "name": "value", "type": "uint256" },
+              { "internalType": "bool", "name": "termsOkCheck", "type": "bool" }
             ],
             "internalType": "struct Action[]",
             "name": "actions",
@@ -714,9 +714,9 @@
         "name": "_taskSpecs",
         "type": "tuple[]"
       },
-      {"internalType": "address[]", "name": "_modules", "type": "address[]"},
-      {"internalType": "uint256", "name": "_getId", "type": "uint256"},
-      {"internalType": "uint256", "name": "_setId", "type": "uint256"}
+      { "internalType": "address[]", "name": "_modules", "type": "address[]" },
+      { "internalType": "uint256", "name": "_getId", "type": "uint256" },
+      { "internalType": "uint256", "name": "_setId", "type": "uint256" }
     ],
     "name": "multiUnprovide",
     "outputs": [],
@@ -726,7 +726,7 @@
   {
     "inputs": [],
     "name": "name",
-    "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -734,8 +734,8 @@
     "inputs": [
       {
         "components": [
-          {"internalType": "address", "name": "addr", "type": "address"},
-          {"internalType": "address", "name": "module", "type": "address"}
+          { "internalType": "address", "name": "addr", "type": "address" },
+          { "internalType": "address", "name": "module", "type": "address" }
         ],
         "internalType": "struct Provider",
         "name": "_provider",
@@ -745,8 +745,8 @@
         "components": [
           {
             "components": [
-              {"internalType": "address", "name": "inst", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"}
+              { "internalType": "address", "name": "inst", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" }
             ],
             "internalType": "struct Condition[]",
             "name": "conditions",
@@ -754,8 +754,8 @@
           },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"},
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" },
               {
                 "internalType": "enum Operation",
                 "name": "operation",
@@ -766,8 +766,8 @@
                 "name": "dataFlow",
                 "type": "uint8"
               },
-              {"internalType": "uint256", "name": "value", "type": "uint256"},
-              {"internalType": "bool", "name": "termsOkCheck", "type": "bool"}
+              { "internalType": "uint256", "name": "value", "type": "uint256" },
+              { "internalType": "bool", "name": "termsOkCheck", "type": "bool" }
             ],
             "internalType": "struct Action[]",
             "name": "actions",
@@ -788,7 +788,7 @@
         "name": "_task",
         "type": "tuple"
       },
-      {"internalType": "uint256", "name": "_expiryDate", "type": "uint256"}
+      { "internalType": "uint256", "name": "_expiryDate", "type": "uint256" }
     ],
     "name": "submitTask",
     "outputs": [],
@@ -799,8 +799,8 @@
     "inputs": [
       {
         "components": [
-          {"internalType": "address", "name": "addr", "type": "address"},
-          {"internalType": "address", "name": "module", "type": "address"}
+          { "internalType": "address", "name": "addr", "type": "address" },
+          { "internalType": "address", "name": "module", "type": "address" }
         ],
         "internalType": "struct Provider",
         "name": "_provider",
@@ -810,8 +810,8 @@
         "components": [
           {
             "components": [
-              {"internalType": "address", "name": "inst", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"}
+              { "internalType": "address", "name": "inst", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" }
             ],
             "internalType": "struct Condition[]",
             "name": "conditions",
@@ -819,8 +819,8 @@
           },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"},
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" },
               {
                 "internalType": "enum Operation",
                 "name": "operation",
@@ -831,8 +831,8 @@
                 "name": "dataFlow",
                 "type": "uint8"
               },
-              {"internalType": "uint256", "name": "value", "type": "uint256"},
-              {"internalType": "bool", "name": "termsOkCheck", "type": "bool"}
+              { "internalType": "uint256", "name": "value", "type": "uint256" },
+              { "internalType": "bool", "name": "termsOkCheck", "type": "bool" }
             ],
             "internalType": "struct Action[]",
             "name": "actions",
@@ -853,7 +853,7 @@
         "name": "_tasks",
         "type": "tuple[]"
       },
-      {"internalType": "uint256", "name": "_expiryDate", "type": "uint256"},
+      { "internalType": "uint256", "name": "_expiryDate", "type": "uint256" },
       {
         "internalType": "uint256",
         "name": "_sumOfRequestedTaskSubmits",
@@ -869,8 +869,8 @@
     "inputs": [
       {
         "components": [
-          {"internalType": "address", "name": "addr", "type": "address"},
-          {"internalType": "address", "name": "module", "type": "address"}
+          { "internalType": "address", "name": "addr", "type": "address" },
+          { "internalType": "address", "name": "module", "type": "address" }
         ],
         "internalType": "struct Provider",
         "name": "_provider",
@@ -880,8 +880,8 @@
         "components": [
           {
             "components": [
-              {"internalType": "address", "name": "inst", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"}
+              { "internalType": "address", "name": "inst", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" }
             ],
             "internalType": "struct Condition[]",
             "name": "conditions",
@@ -889,8 +889,8 @@
           },
           {
             "components": [
-              {"internalType": "address", "name": "addr", "type": "address"},
-              {"internalType": "bytes", "name": "data", "type": "bytes"},
+              { "internalType": "address", "name": "addr", "type": "address" },
+              { "internalType": "bytes", "name": "data", "type": "bytes" },
               {
                 "internalType": "enum Operation",
                 "name": "operation",
@@ -901,8 +901,8 @@
                 "name": "dataFlow",
                 "type": "uint8"
               },
-              {"internalType": "uint256", "name": "value", "type": "uint256"},
-              {"internalType": "bool", "name": "termsOkCheck", "type": "bool"}
+              { "internalType": "uint256", "name": "value", "type": "uint256" },
+              { "internalType": "bool", "name": "termsOkCheck", "type": "bool" }
             ],
             "internalType": "struct Action[]",
             "name": "actions",
@@ -923,8 +923,8 @@
         "name": "_tasks",
         "type": "tuple[]"
       },
-      {"internalType": "uint256", "name": "_expiryDate", "type": "uint256"},
-      {"internalType": "uint256", "name": "_cycles", "type": "uint256"}
+      { "internalType": "uint256", "name": "_expiryDate", "type": "uint256" },
+      { "internalType": "uint256", "name": "_cycles", "type": "uint256" }
     ],
     "name": "submitTaskCycle",
     "outputs": [],

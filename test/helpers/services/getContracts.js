@@ -1,5 +1,5 @@
 const hre = require("hardhat");
-const {ethers} = hre;
+const { ethers } = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
 const InstaIndex = require("../../../pre-compiles/InstaIndex.json");

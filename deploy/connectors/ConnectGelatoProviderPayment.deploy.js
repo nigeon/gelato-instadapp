@@ -1,7 +1,7 @@
 const hre = require("hardhat");
-const {ethers} = hre;
+const { ethers } = hre;
 
-const {sleep} = require("@gelatonetwork/core");
+const { sleep } = require("@gelatonetwork/core");
 
 const InstaConnector = require("../../pre-compiles/InstaConnectors.json");
 
@@ -10,11 +10,11 @@ module.exports = async (hre) => {
     console.log(
       "Deploying ConnectGelatoProviderPayment to mainnet. Hit ctrl + c to abort"
     );
-    await sleep(10000);
+    await sleep(2000);
   }
-  const {deployments} = hre;
-  const {deploy} = deployments;
-  const {deployer, gelatoProvider} = await hre.getNamedAccounts();
+  const { deployments } = hre;
+  const { deploy } = deployments;
+  const { deployer, gelatoProvider } = await hre.getNamedAccounts();
 
   const instaConnectors = await hre.ethers.getContractAt(
     InstaConnector.abi,

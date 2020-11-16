@@ -1,6 +1,6 @@
-const {sleep} = require("@gelatonetwork/core");
+const { sleep } = require("@gelatonetwork/core");
 const hre = require("hardhat");
-const {ethers} = hre;
+const { ethers } = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
 module.exports = async (hre) => {
@@ -8,12 +8,12 @@ module.exports = async (hre) => {
     console.log(
       "Deploying MockGelatoExecutor to mainnet. Hit ctrl + c to abort"
     );
-    await sleep(10000);
+    await sleep(2000);
   }
 
-  const {deployments} = hre;
-  const {deploy} = deployments;
-  const {deployer} = await hre.getNamedAccounts();
+  const { deployments } = hre;
+  const { deploy } = deployments;
+  const { deployer } = await hre.getNamedAccounts();
   const gelatoCore = await ethers.getContractAt(
     GelatoCoreLib.GelatoCore.abi,
     hre.network.config.GelatoCore

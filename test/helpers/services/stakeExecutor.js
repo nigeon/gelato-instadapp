@@ -1,4 +1,4 @@
-const {expect} = require("chai");
+const { expect } = require("chai");
 
 async function stakeExecutor(gelatoExecutorWallet, gelatoCore) {
   //#region Executor Stake on Gelato

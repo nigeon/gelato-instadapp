@@ -1,6 +1,6 @@
-const {expect} = require("chai");
+const { expect } = require("chai");
 const hre = require("hardhat");
-const {deployments, ethers} = hre;
+const { deployments, ethers } = hre;
 
 const InstaPoolResolver = require("../../artifacts/contracts/interfaces/InstaDapp/resolvers/IInstaPoolResolver.sol/IInstaPoolResolver.json");
 const DAI = hre.network.config.DAI;

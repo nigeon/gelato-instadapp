@@ -1,8 +1,8 @@
 // running `npx hardhat test` automatically makes use of hardhat-waffle plugin
 // => only dependency we need is "chai"
-const {expect} = require("chai");
+const { expect } = require("chai");
 const hre = require("hardhat");
-const {ethers} = hre;
+const { ethers } = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 //const { sleep } = GelatoCoreLib;
 
@@ -194,7 +194,7 @@ describe("DSA setup with Gelato Tests", function () {
     );
 
     // We withdraw to otherWallet to ignore gasUsed during test
-    const {1: otherWallet} = await ethers.getSigners();
+    const { 1: otherWallet } = await ethers.getSigners();
 
     // Instantiate Gelato ConnectBasic.withdraw Task
     const withdrawFromDSATask = new GelatoCoreLib.Task({

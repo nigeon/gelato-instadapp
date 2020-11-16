@@ -66,9 +66,8 @@ contract ConnectGelatoDataPartialRefinanceMaker is ConnectorInterface {
     }
 
     // solhint-disable const-name-snakecase
-    string
-        public constant
-        override name = "ConnectGelatoDataPartialRefinanceMaker-v1.0";
+    string public constant override name =
+        "ConnectGelatoDataPartialRefinanceMaker-v1.0";
     uint256 internal immutable _id;
     address internal immutable _connectGelatoProviderPayment;
 
@@ -95,9 +94,8 @@ contract ConnectGelatoDataPartialRefinanceMaker is ConnectorInterface {
     function getDataAndCastMakerToMaker(
         PartialDebtBridgePayload calldata _payload
     ) external payable {
-        (address[] memory targets, bytes[] memory datas) = _dataMakerToMaker(
-            _payload
-        );
+        (address[] memory targets, bytes[] memory datas) =
+            _dataMakerToMaker(_payload);
 
         _cast(targets, datas);
     }
@@ -108,25 +106,24 @@ contract ConnectGelatoDataPartialRefinanceMaker is ConnectorInterface {
     function getDataAndCastMakerToCompound(
         PartialDebtBridgePayload calldata _payload
     ) external payable {
-        (address[] memory targets, bytes[] memory datas) = _dataMakerToCompound(
-            _payload
-        );
+        (address[] memory targets, bytes[] memory datas) =
+            _dataMakerToCompound(_payload);
 
         _cast(targets, datas);
     }
 
     function _cast(address[] memory targets, bytes[] memory datas) internal {
         // Instapool V2 / FlashLoan call
-        bytes memory castData = abi.encodeWithSelector(
-            AccountInterface.cast.selector,
-            targets,
-            datas,
-            msg.sender // msg.sender == GelatoCore
-        );
+        bytes memory castData =
+            abi.encodeWithSelector(
+                AccountInterface.cast.selector,
+                targets,
+                datas,
+                msg.sender // msg.sender == GelatoCore
+            );
 
-        (bool success, bytes memory returndata) = address(this).delegatecall(
-            castData
-        );
+        (bool success, bytes memory returndata) =
+            address(this).delegatecall(castData);
         if (!success)
             returndata.revertWithError(
                 "ConnectGelatoDataPartialRefinanceMaker._cast:"
@@ -147,13 +144,14 @@ contract ConnectGelatoDataPartialRefinanceMaker is ConnectorInterface {
             uint256 wDaiDebtToMove,
             uint256 wColToWithdrawFromMaker,
             uint256 gasFeesPaidFromCol
-        ) = computeDebtBridge(
-            _payload.vaultId,
-            _payload.wMinColRatioMaker,
-            _payload.wMinColRatioB,
-            _payload.priceOracle,
-            _payload.oraclePayload
-        );
+        ) =
+            computeDebtBridge(
+                _payload.vaultId,
+                _payload.wMinColRatioMaker,
+                _payload.wMinColRatioB,
+                _payload.priceOracle,
+                _payload.oraclePayload
+            );
 
         address[] memory _targets = new address[](7);
         _targets[0] = CONNECT_MAKER; // payback
@@ -215,13 +213,14 @@ contract ConnectGelatoDataPartialRefinanceMaker is ConnectorInterface {
             uint256 wDaiDebtToMove,
             uint256 wColToWithdrawFromMaker,
             uint256 gasFeesPaidFromCol
-        ) = computeDebtBridge(
-            _payload.vaultId,
-            _payload.wMinColRatioMaker,
-            _payload.wMinColRatioB,
-            _payload.priceOracle,
-            _payload.oraclePayload
-        );
+        ) =
+            computeDebtBridge(
+                _payload.vaultId,
+                _payload.wMinColRatioMaker,
+                _payload.wMinColRatioB,
+                _payload.priceOracle,
+                _payload.oraclePayload
+            );
 
         address[] memory _targets = new address[](6);
         _targets[0] = CONNECT_MAKER; // payback
@@ -301,9 +300,8 @@ contract ConnectGelatoDataPartialRefinanceMaker is ConnectorInterface {
 
         // Stack too deep
         {
-            (bool success, bytes memory returndata) = _priceOracle.staticcall(
-                _oraclePayload
-            );
+            (bool success, bytes memory returndata) =
+                _priceOracle.staticcall(_oraclePayload);
 
             if (!success) {
                 GelatoBytes.revertWithError(
@@ -319,10 +317,14 @@ contract ConnectGelatoDataPartialRefinanceMaker is ConnectorInterface {
         // uint256 gasFeesPaidFromCol = _mul(GAS_COST, wmul(_getGelatoGasPrice(), latestPrice));
         gasFeesPaidFromCol = _getGelatoProviderFees(GAS_COST);
 
-        uint256 wPricedCol = wmul(
-            sub(_getMakerVaultCollateralBalance(_vaultId), gasFeesPaidFromCol),
-            wColPrice
-        );
+        uint256 wPricedCol =
+            wmul(
+                sub(
+                    _getMakerVaultCollateralBalance(_vaultId),
+                    gasFeesPaidFromCol
+                ),
+                wColPrice
+            );
 
         uint256 wDaiDebtOnMaker = _getMakerVaultDebt(_vaultId);
 

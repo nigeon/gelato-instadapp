@@ -1,14 +1,14 @@
-const {sleep} = require("@gelatonetwork/core");
+const { sleep } = require("@gelatonetwork/core");
 
 module.exports = async (hre) => {
   if (hre.network.name === "mainnet") {
     console.log("Deploying MockDSR to mainnet. Hit ctrl + c to abort");
-    await sleep(10000);
+    await sleep(2000);
   }
 
-  const {deployments} = hre;
-  const {deploy} = deployments;
-  const {deployer} = await hre.getNamedAccounts();
+  const { deployments } = hre;
+  const { deploy } = deployments;
+  const { deployer } = await hre.getNamedAccounts();
 
   const APY_2_PERCENT_IN_SECONDS = "1000000000627937192491029810";
 

@@ -198,9 +198,8 @@ contract CompoundHelpers is Helpers {
      * @dev enter compound market
      */
     function enterMarket(address cToken) internal {
-        ComptrollerInterface troller = ComptrollerInterface(
-            getComptrollerAddress()
-        );
+        ComptrollerInterface troller =
+            ComptrollerInterface(getComptrollerAddress());
         address[] memory markets = troller.getAssetsIn(address(this));
         bool isEntered = false;
         for (uint256 i = 0; i < markets.length; i++) {
@@ -276,16 +275,10 @@ contract BasicResolver is CompoundHelpers {
         setUint(setId, _amt);
 
         emit LogDeposit(token, cToken, _amt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogDeposit(address,address,uint256,uint256,uint256)"
-        );
-        bytes memory _eventParam = abi.encode(
-            token,
-            cToken,
-            _amt,
-            getId,
-            setId
-        );
+        bytes32 _eventCode =
+            keccak256("LogDeposit(address,address,uint256,uint256,uint256)");
+        bytes memory _eventParam =
+            abi.encode(token, cToken, _amt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
             _type,
@@ -313,18 +306,20 @@ contract BasicResolver is CompoundHelpers {
         CTokenInterface cTokenContract = CTokenInterface(cToken);
         if (_amt == uint256(-1)) {
             TokenInterface tokenContract = TokenInterface(token);
-            uint256 initialBal = token == getAddressETH()
-                ? address(this).balance
-                : tokenContract.balanceOf(address(this));
+            uint256 initialBal =
+                token == getAddressETH()
+                    ? address(this).balance
+                    : tokenContract.balanceOf(address(this));
             require(
                 cTokenContract.redeem(
                     cTokenContract.balanceOf(address(this))
                 ) == 0,
                 "full-withdraw-failed"
             );
-            uint256 finalBal = token == getAddressETH()
-                ? address(this).balance
-                : tokenContract.balanceOf(address(this));
+            uint256 finalBal =
+                token == getAddressETH()
+                    ? address(this).balance
+                    : tokenContract.balanceOf(address(this));
             _amt = finalBal - initialBal;
         } else {
             require(
@@ -335,16 +330,10 @@ contract BasicResolver is CompoundHelpers {
         setUint(setId, _amt);
 
         emit LogWithdraw(token, cToken, _amt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogWithdraw(address,address,uint256,uint256,uint256)"
-        );
-        bytes memory _eventParam = abi.encode(
-            token,
-            cToken,
-            _amt,
-            getId,
-            setId
-        );
+        bytes32 _eventCode =
+            keccak256("LogWithdraw(address,address,uint256,uint256,uint256)");
+        bytes memory _eventParam =
+            abi.encode(token, cToken, _amt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
             _type,
@@ -374,16 +363,10 @@ contract BasicResolver is CompoundHelpers {
         setUint(setId, _amt);
 
         emit LogBorrow(token, cToken, _amt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogBorrow(address,address,uint256,uint256,uint256)"
-        );
-        bytes memory _eventParam = abi.encode(
-            token,
-            cToken,
-            _amt,
-            getId,
-            setId
-        );
+        bytes32 _eventCode =
+            keccak256("LogBorrow(address,address,uint256,uint256,uint256)");
+        bytes memory _eventParam =
+            abi.encode(token, cToken, _amt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
             _type,
@@ -428,16 +411,10 @@ contract BasicResolver is CompoundHelpers {
         setUint(setId, _amt);
 
         emit LogPayback(token, cToken, _amt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogPayback(address,address,uint256,uint256,uint256)"
-        );
-        bytes memory _eventParam = abi.encode(
-            token,
-            cToken,
-            _amt,
-            getId,
-            setId
-        );
+        bytes32 _eventCode =
+            keccak256("LogPayback(address,address,uint256,uint256,uint256)");
+        bytes memory _eventParam =
+            abi.encode(token, cToken, _amt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
             _type,
@@ -536,17 +513,12 @@ contract ExtraResolver is BasicResolver {
         setUint(setId, _cAmt);
 
         emit LogDepositCToken(token, cToken, _amt, _cAmt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogDepositCToken(address,address,uint256,uint256,uint256,uint256)"
-        );
-        bytes memory _eventParam = abi.encode(
-            token,
-            cToken,
-            _amt,
-            _cAmt,
-            getId,
-            setId
-        );
+        bytes32 _eventCode =
+            keccak256(
+                "LogDepositCToken(address,address,uint256,uint256,uint256,uint256)"
+            );
+        bytes memory _eventParam =
+            abi.encode(token, cToken, _amt, _cAmt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
             _type,
@@ -579,16 +551,12 @@ contract ExtraResolver is BasicResolver {
         setUint(setId, _amt);
 
         emit LogWithdrawCToken(token, cToken, _amt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogWithdrawCToken(address,address,uint256,uint256,uint256)"
-        );
-        bytes memory _eventParam = abi.encode(
-            token,
-            cToken,
-            _amt,
-            getId,
-            setId
-        );
+        bytes32 _eventCode =
+            keccak256(
+                "LogWithdrawCToken(address,address,uint256,uint256,uint256)"
+            );
+        bytes memory _eventParam =
+            abi.encode(token, cToken, _amt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
             _type,
@@ -616,16 +584,16 @@ contract ExtraResolver is BasicResolver {
         uint256 setId
     ) external payable {
         uint256 _amt = getUint(getId, amt);
-        address cTokenPay = InstaMapping(getMappingAddr()).cTokenMapping(
-            tokenToPay
-        );
-        address cTokenColl = InstaMapping(getMappingAddr()).cTokenMapping(
-            tokenInReturn
-        );
+        address cTokenPay =
+            InstaMapping(getMappingAddr()).cTokenMapping(tokenToPay);
+        address cTokenColl =
+            InstaMapping(getMappingAddr()).cTokenMapping(tokenInReturn);
         CTokenInterface cTokenContract = CTokenInterface(cTokenPay);
 
-        (, , uint256 shortfal) = ComptrollerInterface(getComptrollerAddress())
-            .getAccountLiquidity(borrower);
+        (, , uint256 shortfal) =
+            ComptrollerInterface(getComptrollerAddress()).getAccountLiquidity(
+                borrower
+            );
         require(shortfal != 0, "account-cannot-be-liquidated");
 
         _amt = _amt == uint256(-1)
@@ -659,17 +627,19 @@ contract ExtraResolver is BasicResolver {
             getId,
             setId
         );
-        bytes32 _eventCode = keccak256(
-            "LogLiquidate(address,address,address,uint256,uint256,uint256)"
-        );
-        bytes memory _eventParam = abi.encode(
-            address(this),
-            tokenToPay,
-            tokenInReturn,
-            _amt,
-            getId,
-            setId
-        );
+        bytes32 _eventCode =
+            keccak256(
+                "LogLiquidate(address,address,address,uint256,uint256,uint256)"
+            );
+        bytes memory _eventParam =
+            abi.encode(
+                address(this),
+                tokenToPay,
+                tokenInReturn,
+                _amt,
+                getId,
+                setId
+            );
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
             _type,

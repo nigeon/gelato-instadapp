@@ -59,9 +59,8 @@ contract PriceOracleResolver is Ownable {
         address oracleAddr = oracle[_oracle];
         if (oracleAddr == address(0))
             revert("PriceOracleResolver.getPrice: no oracle");
-        (bool success, bytes memory returndata) = oracleAddr.staticcall(
-            oraclePayload[_oracle]
-        );
+        (bool success, bytes memory returndata) =
+            oracleAddr.staticcall(oraclePayload[_oracle]);
         if (!success)
             returndata.revertWithError("PriceOracleResolver.getPrice:");
         return abi.decode(returndata, (uint256));

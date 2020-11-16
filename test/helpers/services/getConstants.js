@@ -1,5 +1,5 @@
 const hre = require("hardhat");
-const {ethers} = hre;
+const { ethers } = hre;
 
 const ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const GAS_LIMIT = "5000000";

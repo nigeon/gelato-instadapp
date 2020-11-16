@@ -1,5 +1,5 @@
 const hre = require("hardhat");
-const {ethers} = hre;
+const { ethers } = hre;
 
 async function getMockGelato() {
   return await ethers.getContract("MockGelatoExecutor");

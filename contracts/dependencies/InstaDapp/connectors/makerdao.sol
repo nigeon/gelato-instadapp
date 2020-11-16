@@ -471,16 +471,10 @@ contract EventHelper is MakerHelpers {
         uint256 setId
     ) internal {
         emit LogDeposit(vault, ilk, tokenAmt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogDeposit(uint256,bytes32,uint256,uint256,uint256)"
-        );
-        bytes memory _eventParam = abi.encode(
-            vault,
-            ilk,
-            tokenAmt,
-            getId,
-            setId
-        );
+        bytes32 _eventCode =
+            keccak256("LogDeposit(uint256,bytes32,uint256,uint256,uint256)");
+        bytes memory _eventParam =
+            abi.encode(vault, ilk, tokenAmt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
             _type,
@@ -498,16 +492,10 @@ contract EventHelper is MakerHelpers {
         uint256 setId
     ) internal {
         emit LogBorrow(vault, ilk, tokenAmt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogBorrow(uint256,bytes32,uint256,uint256,uint256)"
-        );
-        bytes memory _eventParam = abi.encode(
-            vault,
-            ilk,
-            tokenAmt,
-            getId,
-            setId
-        );
+        bytes32 _eventCode =
+            keccak256("LogBorrow(uint256,bytes32,uint256,uint256,uint256)");
+        bytes memory _eventParam =
+            abi.encode(vault, ilk, tokenAmt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
             _type,
@@ -556,10 +544,8 @@ contract BasicResolver is EventHelper {
 
         uint256 _vault = getVault(managerContract, vault);
         (bytes32 ilk, address urn) = getVaultData(managerContract, _vault);
-        (uint256 ink, uint256 art) = VatLike(managerContract.vat()).urns(
-            ilk,
-            urn
-        );
+        (uint256 ink, uint256 art) =
+            VatLike(managerContract.vat()).urns(ilk, urn);
 
         require(ink == 0 && art == 0, "vault-has-assets");
         require(managerContract.owns(_vault) == address(this), "not-owner");
@@ -673,9 +659,8 @@ contract BasicResolver is EventHelper {
         setUint(setId, _amt);
 
         emit LogWithdraw(_vault, ilk, _amt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogWithdraw(uint256,bytes32,uint256,uint256,uint256)"
-        );
+        bytes32 _eventCode =
+            keccak256("LogWithdraw(uint256,bytes32,uint256,uint256,uint256)");
         bytes memory _eventParam = abi.encode(_vault, ilk, _amt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
@@ -767,9 +752,8 @@ contract BasicResolver is EventHelper {
         setUint(setId, _amt);
 
         emit LogPayback(_vault, ilk, _amt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogPayback(uint256,bytes32,uint256,uint256,uint256)"
-        );
+        bytes32 _eventCode =
+            keccak256("LogPayback(uint256,bytes32,uint256,uint256,uint256)");
         bytes memory _eventParam = abi.encode(_vault, ilk, _amt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
@@ -837,9 +821,10 @@ contract BasicExtraResolver is BasicResolver {
         setUint(setId, _amt);
 
         emit LogWithdrawLiquidated(vault, ilk, _amt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogWithdrawLiquidated(uint256,bytes32,uint256,uint256,uint256)"
-        );
+        bytes32 _eventCode =
+            keccak256(
+                "LogWithdrawLiquidated(uint256,bytes32,uint256,uint256,uint256)"
+            );
         bytes memory _eventParam = abi.encode(vault, ilk, _amt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
@@ -884,10 +869,8 @@ contract BasicExtraResolver is BasicResolver {
         uint256 _amtBorrow = getUint(getIdBorrow, borrowAmt);
 
         makerData._vault = getVault(managerContract, vault);
-        (bytes32 ilk, address urn) = getVaultData(
-            managerContract,
-            makerData._vault
-        );
+        (bytes32 ilk, address urn) =
+            getVaultData(managerContract, makerData._vault);
 
         makerData.colAddr = InstaMapping(getMappingAddr()).gemJoinMapping(ilk);
         makerData.tokenJoinContract = TokenJoinInterface(makerData.colAddr);
@@ -994,9 +977,8 @@ contract BasicExtraResolver is BasicResolver {
         setUint(setId, _amt);
 
         emit LogExitDai(_vault, ilk, _amt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogExitDai(uint256,bytes32,uint256,uint256,uint256)"
-        );
+        bytes32 _eventCode =
+            keccak256("LogExitDai(uint256,bytes32,uint256,uint256,uint256)");
         bytes memory _eventParam = abi.encode(_vault, ilk, _amt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
@@ -1047,9 +1029,8 @@ contract DsrResolver is BasicExtraResolver {
         setUint(setId, _amt);
 
         emit LogDepositDai(_amt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogDepositDai(uint256,uint256,uint256)"
-        );
+        bytes32 _eventCode =
+            keccak256("LogDepositDai(uint256,uint256,uint256)");
         bytes memory _eventParam = abi.encode(_amt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(
@@ -1102,9 +1083,8 @@ contract DsrResolver is BasicExtraResolver {
         setUint(setId, _amt);
 
         emit LogWithdrawDai(_amt, getId, setId);
-        bytes32 _eventCode = keccak256(
-            "LogWithdrawDai(uint256,uint256,uint256)"
-        );
+        bytes32 _eventCode =
+            keccak256("LogWithdrawDai(uint256,uint256,uint256)");
         bytes memory _eventParam = abi.encode(_amt, getId, setId);
         (uint256 _type, uint256 _id) = connectorID();
         EventInterface(getEventAddr()).emitEvent(

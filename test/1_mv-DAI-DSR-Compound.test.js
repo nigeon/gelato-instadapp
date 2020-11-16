@@ -1,8 +1,8 @@
 // running `npx hardhat test` automatically makes use of hardhat-waffle plugin
 // => only dependency we need is "chai"
-const {expect} = require("chai");
+const { expect } = require("chai");
 const hre = require("hardhat");
-const {deployments, ethers} = hre;
+const { deployments, ethers } = hre;
 
 const GelatoCoreLib = require("@gelatonetwork/core");
 //const { sleep } = GelatoCoreLib;

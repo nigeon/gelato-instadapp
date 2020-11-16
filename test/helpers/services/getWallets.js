@@ -1,6 +1,6 @@
-const {expect} = require("chai");
+const { expect } = require("chai");
 const hre = require("hardhat");
-const {ethers} = hre;
+const { ethers } = hre;
 
 async function getWallets() {
   let userWallet;

@@ -42,8 +42,8 @@ contract Record {
     event LogSwitchShield(bool _shield);
 
     // InstaIndex Address.
-    address
-        public constant instaIndex = 0x0000000000000000000000000000000000000000;
+    address public constant instaIndex =
+        0x0000000000000000000000000000000000000000;
     // The Account Module Version.
     uint256 public constant version = 1;
     // Auth Module(Address of Auth => bool).

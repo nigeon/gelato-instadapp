@@ -50,9 +50,8 @@ contract ConnectGelatoDataFullRefinanceMaker is ConnectorInterface {
     using GelatoBytes for bytes;
 
     // solhint-disable const-name-snakecase
-    string
-        public constant
-        override name = "ConnectGelatoDataFullRefinanceMaker-v1.0";
+    string public constant override name =
+        "ConnectGelatoDataFullRefinanceMaker-v1.0";
     uint256 internal immutable _id;
     address internal immutable _connectGelatoProviderPayment;
 
@@ -83,12 +82,8 @@ contract ConnectGelatoDataFullRefinanceMaker is ConnectorInterface {
         address _colToken,
         string calldata _colType
     ) external payable {
-        (address[] memory targets, bytes[] memory datas) = _dataMakerToMaker(
-            _vaultAId,
-            _vaultBId,
-            _colToken,
-            _colType
-        );
+        (address[] memory targets, bytes[] memory datas) =
+            _dataMakerToMaker(_vaultAId, _vaultBId, _colToken, _colType);
 
         _cast(targets, datas);
     }
@@ -101,26 +96,24 @@ contract ConnectGelatoDataFullRefinanceMaker is ConnectorInterface {
         external
         payable
     {
-        (address[] memory targets, bytes[] memory datas) = _dataMakerToCompound(
-            _vaultId,
-            _colToken
-        );
+        (address[] memory targets, bytes[] memory datas) =
+            _dataMakerToCompound(_vaultId, _colToken);
 
         _cast(targets, datas);
     }
 
     function _cast(address[] memory targets, bytes[] memory datas) internal {
         // Instapool V2 / FlashLoan call
-        bytes memory castData = abi.encodeWithSelector(
-            AccountInterface.cast.selector,
-            targets,
-            datas,
-            msg.sender // msg.sender == GelatoCore
-        );
+        bytes memory castData =
+            abi.encodeWithSelector(
+                AccountInterface.cast.selector,
+                targets,
+                datas,
+                msg.sender // msg.sender == GelatoCore
+            );
 
-        (bool success, bytes memory returndata) = address(this).delegatecall(
-            castData
-        );
+        (bool success, bytes memory returndata) =
+            address(this).delegatecall(castData);
         if (!success) {
             returndata.revertWithError(
                 "ConnectGelatoDataFullRefinanceMaker._cast:"
@@ -140,30 +133,30 @@ contract ConnectGelatoDataFullRefinanceMaker is ConnectorInterface {
         targets[0] = INSTA_POOL_V2;
 
         uint256 wDaiToBorrow = _getRealisedDebt(_getMakerVaultDebt(_vaultAId));
-        uint256 wColToWithdrawFromMaker = _getMakerVaultCollateralBalance(
-            _vaultAId
-        );
+        uint256 wColToWithdrawFromMaker =
+            _getMakerVaultCollateralBalance(_vaultAId);
         uint256 route = _getFlashLoanRoute(DAI, wDaiToBorrow);
         uint256 gasCost = _getGasCostMakerToMaker(_vaultBId == 0, route);
         uint256 gasFeesPaidFromCol = _getGelatoProviderFees(gasCost);
 
-        (address[] memory _targets, bytes[] memory _datas) = _vaultBId == 0
-            ? _spellsMakerToNewMakerVault(
-                _vaultAId,
-                _colToken,
-                _colType,
-                wDaiToBorrow,
-                wColToWithdrawFromMaker,
-                gasFeesPaidFromCol
-            )
-            : _spellsMakerToMaker(
-                _vaultAId,
-                _vaultBId,
-                _colToken,
-                wDaiToBorrow,
-                wColToWithdrawFromMaker,
-                gasFeesPaidFromCol
-            );
+        (address[] memory _targets, bytes[] memory _datas) =
+            _vaultBId == 0
+                ? _spellsMakerToNewMakerVault(
+                    _vaultAId,
+                    _colToken,
+                    _colType,
+                    wDaiToBorrow,
+                    wColToWithdrawFromMaker,
+                    gasFeesPaidFromCol
+                )
+                : _spellsMakerToMaker(
+                    _vaultAId,
+                    _vaultBId,
+                    _colToken,
+                    wDaiToBorrow,
+                    wColToWithdrawFromMaker,
+                    gasFeesPaidFromCol
+                );
 
         datas = new bytes[](1);
         datas[0] = abi.encodeWithSelector(
@@ -256,9 +249,8 @@ contract ConnectGelatoDataFullRefinanceMaker is ConnectorInterface {
         targets[0] = INSTA_POOL_V2;
 
         uint256 wDaiToBorrow = _getRealisedDebt(_getMakerVaultDebt(_vaultId));
-        uint256 wColToWithdrawFromMaker = _getMakerVaultCollateralBalance(
-            _vaultId
-        );
+        uint256 wColToWithdrawFromMaker =
+            _getMakerVaultCollateralBalance(_vaultId);
         uint256 route = _getFlashLoanRoute(DAI, wDaiToBorrow);
         uint256 gasCost = _getGasCostMakerToCompound(route);
         uint256 gasFeesPaidFromCol = _getGelatoProviderFees(gasCost);

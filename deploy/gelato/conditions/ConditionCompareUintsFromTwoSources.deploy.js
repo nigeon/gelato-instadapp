@@ -1,16 +1,16 @@
-const {sleep} = require("@gelatonetwork/core");
+const { sleep } = require("@gelatonetwork/core");
 
 module.exports = async (hre) => {
   if (hre.network.name === "mainnet") {
     console.log(
       "Deploying ConditionCompareUintsFromTwoSources to mainnet. Hit ctrl + c to abort"
     );
-    await sleep(10000);
+    await sleep(2000);
   }
 
-  const {deployments} = hre;
-  const {deploy} = deployments;
-  const {deployer} = await hre.getNamedAccounts();
+  const { deployments } = hre;
+  const { deploy } = deployments;
+  const { deployer } = await hre.getNamedAccounts();
 
   // the following will only deploy "ConditionCompareUintsFromTwoSources"
   // if the contract was never deployed or if the code changed since last deployment

@@ -1,6 +1,6 @@
-const {expect} = require("chai");
+const { expect } = require("chai");
 const hre = require("hardhat");
-const {deployments, ethers} = hre;
+const { deployments, ethers } = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
 // #region Contracts ABI and Constants

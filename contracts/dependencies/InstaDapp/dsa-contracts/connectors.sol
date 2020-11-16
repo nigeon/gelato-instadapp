@@ -30,8 +30,8 @@ contract Controllers is DSMath {
     event LogRemoveController(address indexed addr);
 
     // InstaIndex Address.
-    address
-        public constant instaIndex = 0x0000000000000000000000000000000000000000;
+    address public constant instaIndex =
+        0x0000000000000000000000000000000000000000;
 
     // Enabled Chief(Address of Chief => bool).
     mapping(address => bool) public chief;

@@ -50,10 +50,8 @@ contract ConditionDebtBridgeIsAffordable is GelatoConditionsStandard {
         bytes calldata _conditionData,
         uint256
     ) public view virtual override returns (string memory) {
-        (uint256 _vaultID, uint256 _ratioLimit) = abi.decode(
-            _conditionData,
-            (uint256, uint256)
-        );
+        (uint256 _vaultID, uint256 _ratioLimit) =
+            abi.decode(_conditionData, (uint256, uint256));
 
         return isAffordable(_vaultID, _ratioLimit);
     }
@@ -70,18 +68,18 @@ contract ConditionDebtBridgeIsAffordable is GelatoConditionsStandard {
         view
         returns (string memory)
     {
-        uint256 wColToWithdrawFromMaker = _getMakerVaultCollateralBalance(
-            _vaultId
-        );
-        uint256 gasFeesPaidFromCol = _getGelatoProviderFees(
-            _getGasCostMakerToMaker(
-                true,
-                _getFlashLoanRoute(
-                    DAI,
-                    _getRealisedDebt(_getMakerVaultDebt(_vaultId))
+        uint256 wColToWithdrawFromMaker =
+            _getMakerVaultCollateralBalance(_vaultId);
+        uint256 gasFeesPaidFromCol =
+            _getGelatoProviderFees(
+                _getGasCostMakerToMaker(
+                    true,
+                    _getFlashLoanRoute(
+                        DAI,
+                        _getRealisedDebt(_getMakerVaultDebt(_vaultId))
+                    )
                 )
-            )
-        );
+            );
         if (wdiv(gasFeesPaidFromCol, wColToWithdrawFromMaker) >= _ratioLimit)
             return "DebtBridgeNotAffordable";
         return OK;

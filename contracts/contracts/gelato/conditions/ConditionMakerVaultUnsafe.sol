@@ -65,9 +65,8 @@ contract ConditionMakerVaultUnsafe is GelatoConditionsStandard {
         bytes memory _oraclePayload,
         uint256 _minColRatio
     ) public view virtual returns (string memory) {
-        (bool success, bytes memory returndata) = _priceOracle.staticcall(
-            _oraclePayload
-        );
+        (bool success, bytes memory returndata) =
+            _priceOracle.staticcall(_oraclePayload);
 
         if (!success) {
             returndata.revertWithError(
@@ -77,15 +76,12 @@ contract ConditionMakerVaultUnsafe is GelatoConditionsStandard {
 
         uint256 colPriceInWad = abi.decode(returndata, (uint256));
 
-        IInstaMakerResolver.VaultData memory vault = IInstaMakerResolver(
-            0x0A7008B38E7015F8C36A49eEbc32513ECA8801E5
-        )
-            .getVaultById(_vaultId);
+        IInstaMakerResolver.VaultData memory vault =
+            IInstaMakerResolver(0x0A7008B38E7015F8C36A49eEbc32513ECA8801E5)
+                .getVaultById(_vaultId);
 
-        uint256 colRatio = wdiv(
-            wmul(vault.collateral, colPriceInWad),
-            vault.debt
-        );
+        uint256 colRatio =
+            wdiv(wmul(vault.collateral, colPriceInWad), vault.debt);
 
         return colRatio < _minColRatio ? OK : "MakerVaultNotUnsafe";
     }

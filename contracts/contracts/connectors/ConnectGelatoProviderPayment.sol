@@ -29,9 +29,8 @@ contract ConnectGelatoProviderPayment is
     // solhint-disable-next-line const-name-snakecase
     string public constant override name = "ConnectGelatoProviderPayment-v1.0";
 
-    address
-        public constant
-        override GELATO_CORE = 0x1d681d76ce96E4d70a88A00EBbcfc1E47808d0b8;
+    address public constant override GELATO_CORE =
+        0x1d681d76ce96E4d70a88A00EBbcfc1E47808d0b8;
 
     address public override gelatoProvider;
 
@@ -90,8 +89,8 @@ contract ConnectGelatoProviderPayment is
         uint256 _getId,
         uint256 _setId
     ) external payable override {
-        address provider = IConnectGelatoProviderPayment(_this)
-            .gelatoProvider();
+        address provider =
+            IConnectGelatoProviderPayment(_this).gelatoProvider();
 
         uint256 amt = _getUint(_getId, _amt);
         _setUint(_setId, amt);
@@ -100,7 +99,7 @@ contract ConnectGelatoProviderPayment is
             // solhint-disable no-empty-blocks
             try
                 IGelatoProviders(GELATO_CORE).provideFunds{value: amt}(provider)
-             {} catch Error(string memory error) {
+            {} catch Error(string memory error) {
                 error.revertWithInfo(
                     "ConnectGelatoProviderPayment.payProvider.provideFunds:"
                 );

@@ -49,10 +49,11 @@ contract ConditionCompareUintsFromTwoSources is GelatoConditionsStandard {
             bytes memory _sourceAData,
             bytes memory _sourceBData,
             uint256 _minSpread
-        ) = abi.decode(
-            _conditionData,
-            (address, address, bytes, bytes, uint256)
-        );
+        ) =
+            abi.decode(
+                _conditionData,
+                (address, address, bytes, bytes, uint256)
+            );
         return
             compare(_sourceA, _sourceB, _sourceAData, _sourceBData, _minSpread);
     }
@@ -76,9 +77,8 @@ contract ConditionCompareUintsFromTwoSources is GelatoConditionsStandard {
         uint256 _minSpread
     ) public view virtual returns (string memory) {
         // Retrieve uint256 from sourceA
-        (bool success, bytes memory returndata) = _sourceA.staticcall(
-            _sourceAData
-        );
+        (bool success, bytes memory returndata) =
+            _sourceA.staticcall(_sourceAData);
         if (!success) {
             return
                 returndata.returnError(
