@@ -8,7 +8,7 @@ module.exports = async (hre) => {
     console.log(
       "Deploying MockGelatoExecutor to mainnet. Hit ctrl + c to abort"
     );
-    await sleep(6000);
+    await sleep(10000);
   }
 
   const { deployments } = hre;

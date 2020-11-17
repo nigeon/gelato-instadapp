@@ -1,8 +1,6 @@
 const hre = require("hardhat");
 const { ethers } = hre;
-
 const { sleep } = require("@gelatonetwork/core");
-
 const InstaConnector = require("../../pre-compiles/InstaConnectors.json");
 
 module.exports = async (hre) => {
@@ -17,25 +15,6 @@ module.exports = async (hre) => {
   const { deployments } = hre;
   const { deploy } = deployments;
   const { deployer } = await hre.getNamedAccounts();
-
-  const instaConnectors = await hre.ethers.getContractAt(
-    InstaConnector.abi,
-    hre.network.config.InstaConnectors
-  );
-  const connectorLength = await instaConnectors.connectorLength();
-  const connectorId = connectorLength.add(1);
-
-  // the following will only deploy "ConnectGelatoDataFullRefinanceMaker"
-  // if the contract was never deployed or if the code changed since last deployment
-  await deploy("ConnectGelatoDataFullRefinanceMaker", {
-    from: deployer,
-    args: [
-      connectorId,
-      (await deployments.get("ConnectGelatoProviderPayment")).address,
-    ],
-    gasPrice: hre.network.config.gasPrice,
-    log: hre.network.name === "mainnet" ? true : false,
-  });
 
   if (hre.network.name === "hardhat") {
     const deployerWallet = await ethers.provider.getSigner(deployer);
@@ -53,6 +32,21 @@ module.exports = async (hre) => {
       params: [await instaMaster.getAddress()],
     });
 
+    const instaConnectors = await hre.ethers.getContractAt(
+      InstaConnector.abi,
+      hre.network.config.InstaConnectors
+    );
+    const connectorLength = await instaConnectors.connectorLength();
+    const connectorId = connectorLength.add(1);
+
+    await deploy("ConnectGelatoDataFullRefinanceMaker", {
+      from: deployer,
+      args: [
+        connectorId,
+        (await deployments.get("ConnectGelatoProviderPayment")).address,
+      ],
+    });
+
     await instaConnectors
       .connect(instaMaster)
       .enable(
@@ -64,8 +58,27 @@ module.exports = async (hre) => {
       method: "hardhat_stopImpersonatingAccount",
       params: [await instaMaster.getAddress()],
     });
+  } else {
+    // the following will only deploy "ConnectGelatoDataFullRefinanceMaker"
+    // if the contract was never deployed or if the code changed since last deployment
+    await deploy("ConnectGelatoDataFullRefinanceMaker", {
+      from: deployer,
+      args: [
+        parseInt(process.env.ConnectGelatoDataFullRefinanceMakerId),
+        (await deployments.get("ConnectGelatoProviderPayment")).address,
+      ],
+      gasPrice: hre.network.config.gasPrice,
+      nonce: 172,
+      log: true,
+    });
   }
 };
 
+module.exports.skip = async (hre) => {
+  if (hre.network.name === "mainnet") return true;
+  if (hre.network.name !== "hardhat")
+    return process.env.ConnectGelatoDataFullRefinanceMakerId === undefined;
+  return false;
+};
 module.exports.dependencies = ["ConnectGelatoProviderPayment"];
 module.exports.tags = ["ConnectGelatoDataFullRefinanceMaker"];

@@ -3,7 +3,7 @@ const { sleep } = require("@gelatonetwork/core");
 module.exports = async (hre) => {
   if (hre.network.name === "mainnet") {
     console.log("Deploying MockDSR to mainnet. Hit ctrl + c to abort");
-    await sleep(6000);
+    await sleep(10000);
   }
 
   const { deployments } = hre;

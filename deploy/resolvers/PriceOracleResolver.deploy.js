@@ -5,7 +5,7 @@ module.exports = async (hre) => {
     console.log(
       "Deploying PriceOracleResolver to mainnet. Hit ctrl + c to abort"
     );
-    await sleep(5000);
+    await sleep(10000);
   }
 
   const { deployments } = hre;
@@ -21,4 +21,7 @@ module.exports = async (hre) => {
   });
 };
 
+module.exports.skip = async (hre) => {
+  return hre.network.name === "mainnet" ? true : false;
+};
 module.exports.tags = ["PriceOracleResolver"];

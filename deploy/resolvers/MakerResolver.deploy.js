@@ -3,7 +3,7 @@ const { sleep } = require("@gelatonetwork/core");
 module.exports = async (hre) => {
   if (hre.network.name === "mainnet") {
     console.log("Deploying MakerResolver to mainnet. Hit ctrl + c to abort");
-    await sleep(6000);
+    await sleep(10000);
   }
 
   const { deployments } = hre;
@@ -19,4 +19,7 @@ module.exports = async (hre) => {
   });
 };
 
+module.exports.skip = async (hre) => {
+  return hre.network.name === "mainnet" ? true : false;
+};
 module.exports.tags = ["MakerResolver"];
