@@ -197,7 +197,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B with vault creat
     // by a debt refinancing in compound.
 
     //#region EXPECTED OUTCOME
-    const debtOnMakerBefore = await contracts.makerResolver.getMakerVaultDebt(
+    let debtOnMakerBefore = await contracts.makerResolver.getMakerVaultRawDebt(
       vaultAId
     );
 
@@ -206,6 +206,12 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B with vault creat
       debtOnMakerBefore,
       contracts.instaPoolResolver
     );
+
+    if (route !== 1) {
+      debtOnMakerBefore = await contracts.makerResolver.getMakerVaultDebt(
+        vaultAId
+      );
+    }
 
     const gasCost = await getGasCostForFullRefinance(route);
 
@@ -253,9 +259,17 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B with vault creat
     let vaultBId = String(cdps.ids[1]);
     expect(cdps.ids[1].isZero()).to.be.false;
 
-    const debtOnMakerVaultB = await contracts.makerResolver.getMakerVaultDebt(
-      vaultBId
-    );
+    let debtOnMakerVaultB;
+    if (route === 1) {
+      debtOnMakerVaultB = await contracts.makerResolver.getMakerVaultRawDebt(
+        vaultBId
+      );
+    } else {
+      debtOnMakerVaultB = await contracts.makerResolver.getMakerVaultDebt(
+        vaultBId
+      );
+    }
+
     const pricedCollateralOnVaultB = await contracts.makerResolver.getMakerVaultCollateralBalance(
       vaultBId
     );
@@ -283,7 +297,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B with vault creat
     const collateralOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultCollateralBalance(
       vaultAId
     ); // in Ether.
-    const debtOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultDebt(
+    const debtOnMakerOnVaultAAfter = await contracts.makerResolver.getMakerVaultRawDebt(
       vaultAId
     );
 
