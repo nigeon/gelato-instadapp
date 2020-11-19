@@ -12,7 +12,7 @@ const { utils } = require("ethers");
 
 const GelatoCoreLib = require("@gelatonetwork/core");
 
-const mainnetDeployments = require("./hardhat/config/mainnet-deployments");
+const mainnetDeployments = require("./src/config/mainnet-deployments");
 
 // Process Env Variables
 require("dotenv").config();
