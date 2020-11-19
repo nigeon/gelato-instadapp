@@ -1,4 +1,4 @@
-pragma solidity >=0.6.0;
+pragma solidity 0.6.0;
 
 interface CTokenInterface {
     function mint(uint256 mintAmount) external returns (uint256);
@@ -263,7 +263,7 @@ contract BasicResolver is CompoundHelpers {
         enterMarket(cToken);
         if (token == getAddressETH()) {
             _amt = _amt == uint256(-1) ? address(this).balance : _amt;
-            CETHInterface(cToken).mint{value: _amt}();
+            CETHInterface(cToken).mint.value(_amt)();
         } else {
             TokenInterface tokenContract = TokenInterface(token);
             _amt = _amt == uint256(-1)
@@ -398,7 +398,7 @@ contract BasicResolver is CompoundHelpers {
 
         if (token == getAddressETH()) {
             require(address(this).balance >= _amt, "not-enough-eth");
-            CETHInterface(cToken).repayBorrow{value: _amt}();
+            CETHInterface(cToken).repayBorrow.value(_amt)();
         } else {
             TokenInterface tokenContract = TokenInterface(token);
             require(
@@ -498,7 +498,7 @@ contract ExtraResolver is BasicResolver {
 
         if (token == getAddressETH()) {
             _amt = _amt == uint256(-1) ? address(this).balance : _amt;
-            CETHInterface(cToken).mint{value: _amt}();
+            CETHInterface(cToken).mint.value(_amt)();
         } else {
             TokenInterface tokenContract = TokenInterface(token);
             _amt = _amt == uint256(-1)
@@ -601,7 +601,7 @@ contract ExtraResolver is BasicResolver {
             : _amt;
         if (tokenToPay == getAddressETH()) {
             require(address(this).balance >= _amt, "not-enought-eth");
-            CETHInterface(cTokenPay).liquidateBorrow{value: _amt}(
+            CETHInterface(cTokenPay).liquidateBorrow.value(_amt)(
                 borrower,
                 cTokenColl
             );

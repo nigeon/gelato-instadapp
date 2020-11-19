@@ -7,7 +7,7 @@ const providerAssignsExecutor = require("../../../../../helpers/services/gelato/
 const addProviderModuleDSA = require("../../../../../helpers/services/gelato/addProviderModuleDSA");
 const createDSA = require("../../../../../helpers/services/InstaDapp/createDSA");
 const initializeMakerCdp = require("../../../../../helpers/services/maker/initializeMakerCdp");
-const providerWhiteListTaskForMakerToCompound = require("./services/providerWhiteListTaskForMakerToCompound");
+const getSpellsToCompound = require("./services/getSpells-To-Compound");
 const getABI = require("../../../../../helpers/services/getABI");
 
 module.exports = async function () {
@@ -48,7 +48,7 @@ module.exports = async function () {
     constants.MAKER_INITIAL_DEBT
   );
 
-  const spells = await providerWhiteListTaskForMakerToCompound(
+  const spells = await getSpellsToCompound(
     wallets,
     contracts,
     constants,

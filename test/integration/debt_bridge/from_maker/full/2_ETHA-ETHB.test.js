@@ -3,7 +3,7 @@ const hre = require("hardhat");
 const { deployments, ethers } = hre;
 const GelatoCoreLib = require("@gelatonetwork/core");
 
-const setupFullRefinanceMakerToMakerWithVaultBCreation = require("./helpers/setupFullRefinanceMakerToMakerWithVaultBCreation");
+const setupFullRefinanceMakerToMaker = require("./helpers/setupFullRefinanceMakerToMaker");
 const getInstaPoolV2Route = require("../../../../helpers/services/InstaDapp/getInstaPoolV2Route");
 const getGasCostForFullRefinance = require("./helpers/services/getGasCostForFullRefinance");
 
@@ -34,7 +34,7 @@ describe("Full Debt Bridge refinancing loan from ETH-A to ETH-B", function () {
     // Reset back to a fresh forked state during runtime
     await deployments.fixture();
 
-    const result = await setupFullRefinanceMakerToMakerWithVaultBCreation();
+    const result = await setupFullRefinanceMakerToMaker();
 
     wallets = result.wallets;
     contracts = result.contracts;

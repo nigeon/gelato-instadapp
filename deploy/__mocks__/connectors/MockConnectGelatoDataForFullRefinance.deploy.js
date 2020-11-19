@@ -1,12 +1,12 @@
 const hre = require("hardhat");
 const { ethers } = hre;
 const { sleep } = require("@gelatonetwork/core");
-const InstaConnector = require("../../pre-compiles/InstaConnectors.json");
+const InstaConnector = require("../../../pre-compiles/InstaConnectors.json");
 
 module.exports = async (hre) => {
   if (hre.network.name === "mainnet") {
     console.log(
-      "Deploying ConnectGelatoDataFullRefinanceMaker to mainnet. Hit ctrl + c to abort"
+      "Deploying MockConnectGelatoDataFullRefinanceMaker to mainnet. Hit ctrl + c to abort"
     );
     console.log("❗ CONNECTOR DEPLOYMENT: VERIFY & HARDCODE CONNECTOR ID");
     await sleep(6000);
@@ -39,7 +39,7 @@ module.exports = async (hre) => {
     const connectorLength = await instaConnectors.connectorLength();
     const connectorId = connectorLength.add(1);
 
-    await deploy("ConnectGelatoDataFullRefinanceMaker", {
+    await deploy("MockConnectGelatoDataFullRefinanceMaker", {
       from: deployer,
       args: [
         connectorId,
@@ -50,7 +50,7 @@ module.exports = async (hre) => {
     await instaConnectors
       .connect(instaMaster)
       .enable(
-        (await ethers.getContract("ConnectGelatoDataFullRefinanceMaker"))
+        (await ethers.getContract("MockConnectGelatoDataFullRefinanceMaker"))
           .address
       );
 
@@ -59,9 +59,9 @@ module.exports = async (hre) => {
       params: [await instaMaster.getAddress()],
     });
   } else {
-    // the following will only deploy "ConnectGelatoDataFullRefinanceMaker"
+    // the following will only deploy "MockConnectGelatoDataFullRefinanceMaker"
     // if the contract was never deployed or if the code changed since last deployment
-    await deploy("ConnectGelatoDataFullRefinanceMaker", {
+    await deploy("MockConnectGelatoDataFullRefinanceMaker", {
       from: deployer,
       args: [
         parseInt(process.env.ConnectGelatoDataFullRefinanceMakerId),
@@ -80,4 +80,4 @@ module.exports.skip = async (hre) => {
   return false;
 };
 module.exports.dependencies = ["ConnectGelatoProviderPayment"];
-module.exports.tags = ["ConnectGelatoDataFullRefinanceMaker"];
+module.exports.tags = ["MockConnectGelatoDataFullRefinanceMaker"];

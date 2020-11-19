@@ -1,4 +1,4 @@
-pragma solidity >=0.6.0;
+pragma solidity 0.6.0;
 pragma experimental ABIEncoderV2;
 
 /**
@@ -197,7 +197,7 @@ contract InstaIndex is CloneFactory {
     ) external payable returns (address _account) {
         _account = build(_owner, accountVersion, _origin);
         if (_targets.length > 0)
-            AccountInterface(_account).cast{value: msg.value}(
+            AccountInterface(_account).cast.value(msg.value)(
                 _targets,
                 _datas,
                 _origin

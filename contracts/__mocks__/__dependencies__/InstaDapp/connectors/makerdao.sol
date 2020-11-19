@@ -1,4 +1,4 @@
-pragma solidity >=0.6.0;
+pragma solidity 0.6.0;
 
 interface TokenInterface {
     function approve(address, uint256) external;
@@ -589,7 +589,7 @@ contract BasicResolver is EventHelper {
 
         if (isEth(address(tokenContract))) {
             _amt = _amt == uint256(-1) ? address(this).balance : _amt;
-            tokenContract.deposit{value: _amt}();
+            tokenContract.deposit.value(_amt)();
         } else {
             _amt = _amt == uint256(-1)
                 ? tokenContract.balanceOf(address(this))
@@ -883,7 +883,7 @@ contract BasicExtraResolver is BasicResolver {
             _amtDeposit = _amtDeposit == uint256(-1)
                 ? address(this).balance
                 : _amtDeposit;
-            makerData.tokenContract.deposit{value: _amtDeposit}();
+            makerData.tokenContract.deposit.value(_amtDeposit)();
         } else {
             _amtDeposit = _amtDeposit == uint256(-1)
                 ? makerData.tokenContract.balanceOf(address(this))

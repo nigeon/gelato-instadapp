@@ -106,6 +106,12 @@ module.exports = async function () {
   const connectGelatoDataFullRefinanceMaker = await ethers.getContract(
     "ConnectGelatoDataFullRefinanceMaker"
   );
+  const mockDebtBridgeETHBExecutor = await ethers.getContract(
+    "MockDebtBridgeETHBExecutor"
+  );
+  const mockConnectGelatoDataFullRefinanceMaker = await ethers.getContract(
+    "MockConnectGelatoDataFullRefinanceMaker"
+  );
 
   return {
     connectGelato,
@@ -133,5 +139,7 @@ module.exports = async function () {
     instaPoolResolver,
     dsaProviderModule,
     conditionDebtBridgeIsAffordable,
+    mockDebtBridgeETHBExecutor,
+    mockConnectGelatoDataFullRefinanceMaker,
   };
 };

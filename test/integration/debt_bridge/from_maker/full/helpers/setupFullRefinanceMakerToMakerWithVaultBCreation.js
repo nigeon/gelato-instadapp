@@ -8,8 +8,7 @@ const addProviderModuleDSA = require("../../../../../helpers/services/gelato/add
 const createDSA = require("../../../../../helpers/services/InstaDapp/createDSA");
 const addETHBGemJoinMapping = require("../../../../../helpers/services/maker/addETHBGemJoinMapping");
 const initializeMakerCdp = require("../../../../../helpers/services/maker/initializeMakerCdp");
-const createVaultForETHB = require("../../../../../helpers/services/maker/createVaultForETHB");
-const providerWhiteListTaskForMakerETHAToMakerETHBWithVaultB = require("./services/providerWhiteListTaskForMakerETHAToMakerETHBWithVaultB");
+const getSpellsEthAEthBWithVaultCreation = require("./services/getSpells-ETHA-ETHB-With-Vault-Creation");
 const getABI = require("../../../../../helpers/services/getABI");
 
 module.exports = async function () {
@@ -54,19 +53,12 @@ module.exports = async function () {
     constants.MAKER_INITIAL_ETH,
     constants.MAKER_INITIAL_DEBT
   );
-  const vaultBId = await createVaultForETHB(
-    wallets.userAddress,
-    contracts.DAI,
-    contracts.dsa,
-    contracts.getCdps,
-    contracts.dssCdpManager
-  );
-  const spells = await providerWhiteListTaskForMakerETHAToMakerETHBWithVaultB(
+
+  const spells = await getSpellsEthAEthBWithVaultCreation(
     wallets,
     contracts,
     constants,
-    vaultAId,
-    vaultBId
+    vaultAId
   );
 
   const ABI = getABI();
@@ -76,7 +68,6 @@ module.exports = async function () {
     contracts,
     constants,
     vaultAId,
-    vaultBId,
     spells,
     ABI,
   };

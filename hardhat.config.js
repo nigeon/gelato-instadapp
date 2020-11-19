@@ -73,6 +73,18 @@ module.exports = {
   solidity: {
     compilers: [
       {
+        version: "0.6.0",
+        settings: {
+          optimizer: { enabled: process.env.DEBUG ? false : true },
+        },
+      },
+      {
+        version: "0.6.6",
+        settings: {
+          optimizer: { enabled: process.env.DEBUG ? false : true },
+        },
+      },
+      {
         version: "0.6.10",
         settings: {
           optimizer: { enabled: process.env.DEBUG ? false : true },
