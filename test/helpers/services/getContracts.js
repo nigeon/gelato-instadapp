@@ -113,12 +113,20 @@ module.exports = async function () {
     "MockConnectGelatoDataFullRefinanceMaker"
   );
 
+  const connectGelatoDataFullLiquidateMaker = await ethers.getContract(
+    "ConnectGelatoDataFullLiquidateMaker"
+  );
+    const mockConnectGelatoDataFullLiquidateMaker = await ethers.getContract(
+    "MockConnectGelatoDataFullLiquidateMaker"
+  );
+
   return {
     connectGelato,
     connectMaker,
     connectInstaPool,
     connectCompound,
     connectGelatoDataFullRefinanceMaker,
+    connectGelatoDataFullLiquidateMaker,
     instaIndex,
     instaList,
     instaMapping,
@@ -141,5 +149,6 @@ module.exports = async function () {
     conditionDebtBridgeIsAffordable,
     mockDebtBridgeETHBExecutor,
     mockConnectGelatoDataFullRefinanceMaker,
+    mockConnectGelatoDataFullLiquidateMaker,
   };
 };
